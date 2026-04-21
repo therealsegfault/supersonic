@@ -1,0 +1,1650 @@
+{
+  "song": "tellmeyouknow",
+  "bpm": 96,
+  "difficulty": "MEDIUM",
+  "durationMs": 197717,
+  "totalNotes": 205,
+  "sections": [],
+  "notes": [
+    {
+      "t": 2188,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 3281,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 4219,
+      "shape": "sphere",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 5156,
+      "shape": "pyramid",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 6094,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 7031,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 7969,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 8906,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 9844,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 10781,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 11719,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 12656,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 13594,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 14531,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 15469,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 16406,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 17500,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 18594,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 19531,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 20469,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 21406,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 22344,
+      "shape": "pyramid",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 23281,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 24219,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 25156,
+      "shape": "pyramid",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 26094,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 27031,
+      "shape": "sphere",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 27969,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 28906,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 29844,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 30781,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 31719,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 32656,
+      "shape": "pyramid",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 33594,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 34531,
+      "shape": "sphere",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 35625,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 36563,
+      "shape": "pyramid",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 37500,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 38438,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 39375,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 40313,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 41250,
+      "shape": "pyramid",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 42188,
+      "shape": "pyramid",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 43125,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 44063,
+      "shape": "sphere",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 45000,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 45938,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 46875,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 47813,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 48750,
+      "shape": "pyramid",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 49688,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 50625,
+      "shape": "pyramid",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 51563,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 52656,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 53594,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 54531,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 55469,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 56406,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 57344,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 58281,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 59219,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 60156,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 61094,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 62031,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 62969,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 63906,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 64844,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 65781,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 66719,
+      "shape": "sphere",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 67656,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 68594,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 69531,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 70469,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 71406,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 72344,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 73438,
+      "shape": "pyramid",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 74375,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 75313,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 76250,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 77188,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 78125,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 79063,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 80000,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 80938,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 81875,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 82813,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 83750,
+      "shape": "pyramid",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 84688,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 85625,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 86563,
+      "shape": "pyramid",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 87500,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 88438,
+      "shape": "pyramid",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 89375,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 90313,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 91250,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 92188,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 93125,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 94063,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 95000,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 95938,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 96875,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 97813,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 98750,
+      "shape": "pyramid",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 99688,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 100781,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 101719,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 102656,
+      "shape": "pyramid",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 103594,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 104531,
+      "shape": "sphere",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 105469,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 106406,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 107344,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 108281,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 109219,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 110156,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 111094,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 112031,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 112969,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 113906,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 114844,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 115781,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 116719,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 117656,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 118594,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 119531,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 120625,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 121563,
+      "shape": "pyramid",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 122500,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 123438,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 124375,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 125313,
+      "shape": "sphere",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 126250,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 127188,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 128125,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 129063,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 130000,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 130938,
+      "shape": "sphere",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 131875,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 132969,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 133906,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 134844,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 135781,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 136719,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 137656,
+      "shape": "pyramid",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 138594,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 139531,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 140469,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 141406,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 142344,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 143281,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 144219,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 145156,
+      "shape": "sphere",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 146094,
+      "shape": "pyramid",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 147031,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 147969,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 148906,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 149844,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 150781,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 151719,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 152656,
+      "shape": "pyramid",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 153594,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 154531,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 155469,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 156406,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 157344,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 158281,
+      "shape": "sphere",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 159219,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 160156,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 161094,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 162031,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 162969,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 163906,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 164844,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 165781,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 166719,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 167656,
+      "shape": "pyramid",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 168750,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 169688,
+      "shape": "cube",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 170625,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 171563,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 172500,
+      "shape": "sphere",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 173438,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 174375,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 175313,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 176250,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 177188,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 178125,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 179063,
+      "shape": "cube",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 180000,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 180938,
+      "shape": "cube",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 181875,
+      "shape": "cube",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 182813,
+      "shape": "pyramid",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 183750,
+      "shape": "pyramid",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 184688,
+      "shape": "pyramid",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 185625,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 186563,
+      "shape": "pyramid",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 187500,
+      "shape": "cube",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 188438,
+      "shape": "pyramid",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 189375,
+      "shape": "sphere",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 190313,
+      "shape": "cube",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 191250,
+      "shape": "cube",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 192188,
+      "shape": "pyramid",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 193125,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 194063,
+      "shape": "sphere",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 2,
+      "duration": 0
+    },
+    {
+      "t": 195000,
+      "shape": "pyramid",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    }
+  ]
+}

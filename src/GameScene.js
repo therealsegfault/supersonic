@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
 
 // ── Timing constants (from SWING) ──
-const PERFECT_WINDOW_MS = 110;
-const MAX_HIT_WINDOW_MS = 250;
-const MISS_WINDOW_MS = 250;
-const APPROACH_TIME_MS = 2000;
+const PERFECT_WINDOW_MS = 80;
+const MAX_HIT_WINDOW_MS = 180;
+const MISS_WINDOW_MS = 180;
+const APPROACH_TIME_MS = 1200;
 
 // ── Note types ──
 const NOTE_TYPE = {
@@ -38,6 +38,8 @@ export class GameScene extends Phaser.Scene {
         this.goodCount = 0;
         this.missCount = 0;
         this.songDurationMs = 14000;
+        this.songTitle = 'Tell Me You Know';
+        this.difficulty = 'MEDIUM';
         this.audioContext = null;
         this.audioSource = null;
         this.audioBuffer = null;
@@ -45,49 +47,92 @@ export class GameScene extends Phaser.Scene {
         this.isFailing = false;
         this.failTimer = null;
         this.failWarning = false;
+        this.tuningPct = 100;
     }
 
     create() {
-    this.loadAudio().then(() => {
-        this.startAudio();
-    });
+        this.loadAudio().then(() => this.startAudio());
 
         this.startTime = this.time.now;
         this.cx = this.scale.width / 2;
         this.cy = this.scale.height / 2;
 
-        // Strike zone
+        // ── Top bar ──
+        const BAR_H = 72;
+
+        // Bar background
+        this.add.rectangle(this.cx, BAR_H / 2, this.scale.width, BAR_H, 0x000000, 0.88)
+            .setDepth(20);
+
+        // Bottom edge line
+        this.add.rectangle(this.cx, BAR_H, this.scale.width, 1, 0x00ffb4, 1)
+            .setDepth(21);
+
+        // ── Left — song info ──
+        this.add.text(20, 14, this.songTitle, {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '17px',
+            fontStyle: 'bold',
+            color: '#ffffff',
+        }).setDepth(21);
+
+        this.add.text(20, 38, this.difficulty, {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '13px',
+            color: '#888888',
+            letterSpacing: 3,
+        }).setDepth(21);
+
+        // ── Center — tuning ──
+        this.tuningPercentText = this.add.text(this.cx, 10, '100% tuned', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '15px',
+            fontStyle: 'bold',
+            color: '#ffd700',
+        }).setOrigin(0.5, 0).setDepth(21);
+
+        this.tuningProseText = this.add.text(this.cx, 30, 'Perfect. The world holds its breath with you.', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '11px',
+            fontStyle: 'italic',
+            color: '#777777',
+            align: 'center',
+            wordWrap: { width: 420 }
+        }).setOrigin(0.5, 0).setDepth(21);
+
+        // Tuning fill bar
+        const fillBarW = 320;
+        const fillBarX = this.cx - fillBarW / 2;
+        const fillBarY = 58;
+
+        // Track
+        this.add.rectangle(this.cx, fillBarY, fillBarW, 3, 0xffffff, 0.1)
+            .setDepth(21);
+
+        // Fill
+        this.tuningFill = this.add.rectangle(fillBarX, fillBarY, fillBarW, 3, 0xffd700, 1)
+            .setOrigin(0, 0.5)
+            .setDepth(22);
+
+        // ── Right — score ──
+        this.scoreLabel = this.add.text(this.scale.width - 20, 10, 'SCORE', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '11px',
+            color: '#888888',
+            letterSpacing: 2,
+        }).setOrigin(1, 0).setDepth(21);
+
+        this.scoreText = this.add.text(this.scale.width - 20, 24, '00000000', {
+            fontFamily: 'SuperBubble, sans-serif',
+            fontSize: '28px',
+            color: '#ffffff',
+        }).setOrigin(1, 0).setDepth(21);
+
+        // ── Strike zone ──
         this.add.circle(this.cx, this.cy, 55).setStrokeStyle(2, 0xffffff, 0.15);
         this.add.circle(this.cx, this.cy, 8, 0xffffff, 0.6);
 
-        // ── HUD ──
-
-        // Score — top left
-        this.scoreDisplay = this.add.text(20, 20, 'SCORE 00000000', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '18px',
-            color: '#ffffff',
-        }).setDepth(10);
-
-        // Tuning percentage — top center
-        this.tuningPercent = this.add.text(this.cx, 20, '100% tuned', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '16px',
-            fontStyle: 'bold',
-            color: '#00ffb4',
-        }).setOrigin(0.5, 0).setDepth(10);
-
-        // Tuning prose — below percentage
-        this.tuningProse = this.add.text(this.cx, 44, '', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '13px',
-            fontStyle: 'italic',
-            color: '#aaaaaa',
-            align: 'center',
-            wordWrap: { width: 500 }
-        }).setOrigin(0.5, 0).setDepth(10);
-
-        // Judgement — center
+        // ── Judgement ──
         this.judgementDisplay = this.add.text(this.cx, this.cy - 120, '', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '32px',
@@ -95,7 +140,7 @@ export class GameScene extends Phaser.Scene {
             color: '#ffffff'
         }).setOrigin(0.5).setDepth(10);
 
-        // Combo — below judgement
+        // ── Combo ──
         this.comboDisplay = this.add.text(this.cx, this.cy + 90, '', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '28px',
@@ -103,30 +148,23 @@ export class GameScene extends Phaser.Scene {
             color: '#ffdd00',
         }).setOrigin(0.5).setDepth(10);
 
-        // Miss counter — top right
-        this.missDisplay = this.add.text(this.scale.width - 20, 20, '', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '15px',
-            color: '#ff3078',
-        }).setOrigin(1, 0).setDepth(10);
-
         // ── Progress bar — bottom ──
         const barY = this.scale.height - 24;
         const barW = this.scale.width - 80;
         const barX = 40;
 
-        this.add.rectangle(barX + barW / 2, barY, barW, 4, 0xffffff, 0.1).setDepth(10);
-        this.progressFill = this.add.rectangle(barX, barY, 0, 4, 0x00ffb4, 0.8)
+        this.add.rectangle(barX + barW / 2, barY, barW, 3, 0xffffff, 0.1).setDepth(10);
+        this.progressFill = this.add.rectangle(barX, barY, 0, 3, 0x00ffb4, 0.8)
             .setOrigin(0, 0.5).setDepth(10);
 
         this.timeDisplay = this.add.text(this.cx, barY - 14, '', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '12px',
-            color: '#666666',
+            color: '#555555',
         }).setOrigin(0.5).setDepth(10);
 
         // Spawn notes
-        this.spawnTestNotes();
+        this.loadChart('/src/assets/charts/tellmeyouknow_MEDIUM.json');
 
         // Input
         this.input.keyboard.addCapture(['D', 'F', 'J', 'K']);
@@ -137,7 +175,7 @@ export class GameScene extends Phaser.Scene {
         // Fade in
         this.cameras.main.fadeIn(400, 0, 0, 0);
 
-        // Initial tuning state
+        // Initial tuning
         this.updateTuning();
     }
 
@@ -174,48 +212,36 @@ export class GameScene extends Phaser.Scene {
         this.gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
 
         this.cameras.main.shake(200, 0.01);
-
-        this.time.delayedCall(300, () => {
-            this.cameras.main.shake(150, 0.008);
-        });
-
-        this.time.delayedCall(800, () => {
-            this.cameras.main.shake(100, 0.005);
-        });
-
-        this.time.delayedCall(1200, () => {
-            this.cameras.main.fadeOut(800, 0, 0, 0);
-        });
-
-        this.time.delayedCall(2000, () => {
-            this.showFailScreen();
-        });
+        this.time.delayedCall(300, () => this.cameras.main.shake(150, 0.008));
+        this.time.delayedCall(800, () => this.cameras.main.shake(100, 0.005));
+        this.time.delayedCall(1200, () => this.cameras.main.fadeOut(800, 0, 0, 0));
+        this.time.delayedCall(2000, () => this.showFailScreen());
     }
 
     showFailScreen() {
         const cx = this.scale.width / 2;
         const cy = this.scale.height / 2;
-        const pct = this.getCurrentTuningPct();
+        const pct = this.tuningPct;
 
         const notCleared = this.add.text(cx, cy - 40, 'NOT CLEARED', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '48px',
             fontStyle: 'bold',
             color: '#ff3078',
-        }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        }).setOrigin(0.5).setDepth(30).setAlpha(0);
 
         const pctText = this.add.text(cx, cy + 20, `${pct}% tuned`, {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '28px',
             color: '#aaaaaa',
             fontStyle: 'italic'
-        }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        }).setOrigin(0.5).setDepth(30).setAlpha(0);
 
         const continueText = this.add.text(cx, cy + 60, 'press any key to continue', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '16px',
             color: '#555555',
-        }).setOrigin(0.5).setDepth(20).setAlpha(0);
+        }).setOrigin(0.5).setDepth(30).setAlpha(0);
 
         this.cameras.main.fadeIn(600, 0, 0, 0);
 
@@ -237,19 +263,12 @@ export class GameScene extends Phaser.Scene {
         });
     }
 
-    getCurrentTuningPct() {
-        const total = this.perfectCount + this.goodCount + this.missCount;
-        if (total === 0) return 100;
-        const accuracy = ((this.perfectCount + this.goodCount * 0.7) / total) * 100;
-        return Math.round(accuracy);
-    }
-
     getSpawnPosition(direction) {
         const w = this.scale.width;
         const h = this.scale.height;
         const margin = 80;
 
-        const positions = {
+        return {
             left:        { x: -margin,    y: this.cy },
             right:       { x: w + margin, y: this.cy },
             top:         { x: this.cx,    y: -margin },
@@ -258,32 +277,26 @@ export class GameScene extends Phaser.Scene {
             topright:    { x: w + margin, y: -margin },
             bottomleft:  { x: -margin,    y: h + margin },
             bottomright: { x: w + margin, y: h + margin },
-        };
-
-        return positions[direction];
+        }[direction];
     }
 
-    spawnTestNotes() {
-        const sequence = [
-            { time: 2000,  type: NOTE_TYPE.SPHERE,  dir: 'left' },
-            { time: 3000,  type: NOTE_TYPE.CUBE,    dir: 'top' },
-            { time: 4000,  type: NOTE_TYPE.PYRAMID, dir: 'right' },
-            { time: 5000,  type: NOTE_TYPE.SPHERE,  dir: 'bottom' },
-            { time: 6000,  type: NOTE_TYPE.CUBE,    dir: 'topleft' },
-            { time: 7000,  type: NOTE_TYPE.PYRAMID, dir: 'topright' },
-            { time: 8000,  type: NOTE_TYPE.SPHERE,  dir: 'bottomleft' },
-            { time: 9000,  type: NOTE_TYPE.CUBE,    dir: 'bottomright' },
-            { time: 11000, type: NOTE_TYPE.SPHERE,  dir: 'left' },
-            { time: 11000, type: NOTE_TYPE.PYRAMID, dir: 'right' },
-            { time: 11200, type: NOTE_TYPE.CUBE,    dir: 'top' },
-            { time: 11200, type: NOTE_TYPE.SPHERE,  dir: 'bottom' },
-            { time: 12000, type: NOTE_TYPE.PYRAMID, dir: 'topleft' },
-            { time: 12000, type: NOTE_TYPE.CUBE,    dir: 'bottomright' },
-        ];
+    async loadChart(chartPath) {
+        const response = await fetch(chartPath);
+        const chart = await response.json();
 
-        sequence.forEach(n => {
-            this.notes.push(new Note(n.time, n.type, n.dir));
+        this.songTitle = chart.song;
+        this.difficulty = chart.difficulty;
+        this.songDurationMs = chart.durationMs;
+
+        chart.notes.forEach(n => {
+            const note = new Note(n.t, n.shape, n.dir);
+            note.velocity = n.velocity ?? 1.0;
+            note.intensity = n.intensity ?? 1;
+            note.duration = n.duration ?? 0;
+            this.notes.push(note);
         });
+
+        console.log(`Loaded ${this.notes.length} notes from ${chartPath}`);
     }
 
     getCurrentTimeMs() {
@@ -390,11 +403,7 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-        if (candidate) {
-            this.hitNote(candidate, bestOffset);
-        } else {
-            this.registerMiss();
-        }
+        candidate ? this.hitNote(candidate, bestOffset) : this.registerMiss();
     }
 
     hitNote(note, offset) {
@@ -444,73 +453,113 @@ export class GameScene extends Phaser.Scene {
 
     updateScoreDisplay() {
         const score = this.perfectCount * 300 + this.goodCount * 100;
-        this.scoreDisplay.setText(`SCORE ${score.toString().padStart(8, '0')}`);
-        this.missDisplay.setText(this.missCount > 0 ? `${this.missCount} miss` : '');
+        this.scoreText.setText(score.toString().padStart(8, '0'));
+        this.flashScoreAberration();
+    }
+
+    flashScoreAberration() {
+        const cx = this.scoreText.x;
+        const cy = this.scoreText.y;
+        const txt = this.scoreText.text;
+
+        const red = this.add.text(cx - 3, cy + 2, txt, {
+            fontFamily: 'SuperBubble, sans-serif',
+            fontSize: '28px',
+            color: '#ff0055',
+        }).setOrigin(1, 0).setDepth(21).setAlpha(0.7);
+
+        const blue = this.add.text(cx + 3, cy - 2, txt, {
+            fontFamily: 'SuperBubble, sans-serif',
+            fontSize: '28px',
+            color: '#0055ff',
+        }).setOrigin(1, 0).setDepth(21).setAlpha(0.7);
+
+        this.tweens.add({
+            targets: [red, blue],
+            alpha: 0,
+            duration: 180,
+            ease: 'Sine.easeOut',
+            onComplete: () => {
+                red.destroy();
+                blue.destroy();
+            }
+        });
     }
 
     getTuningData(pct) {
         if (pct === 100) return {
             label: '100% tuned',
             color: '#ffd700',
+            fillColor: 0xffd700,
             prose: 'Perfect. The world holds its breath with you.'
         };
         if (pct >= 90) return {
             label: `${pct}% tuned`,
             color: '#00ffb4',
+            fillColor: 0x00ffb4,
             prose: 'The world stills beneath your feet. You feel a sense of calm overtake the place. As if the world paused, then started off again.'
         };
         if (pct >= 75) return {
             label: `${pct}% tuned`,
             color: '#4488ff',
+            fillColor: 0x4488ff,
             prose: 'Something hums just beneath the surface. The city is listening.'
         };
         if (pct >= 60) return {
             label: `${pct}% tuned`,
             color: '#ffdd00',
+            fillColor: 0xffdd00,
             prose: 'The frequency wavers. You can feel it slipping at the edges.'
         };
         if (pct >= 40) return {
             label: `${pct}% tuned`,
             color: '#ff8800',
+            fillColor: 0xff8800,
             prose: 'The air feels wrong. Like a song played in the wrong key.'
         };
         if (pct > 0) return {
             label: `${pct}% tuned`,
             color: '#ff3078',
+            fillColor: 0xff3078,
             prose: 'The world is losing the thread. So are you.'
         };
         return {
             label: '0% tuned',
             color: '#ff3078',
+            fillColor: 0xff3078,
             prose: ''
         };
     }
 
     updateTuning() {
         const total = this.perfectCount + this.goodCount + this.missCount;
+        
         if (total === 0) {
-            const data = this.getTuningData(100);
-            this.tuningPercent.setText(data.label).setColor(data.color);
-            this.tuningProse.setText(data.prose);
-            return;
+            this.tuningPct = 100;
+        } else {
+            const accuracy = ((this.perfectCount + this.goodCount * 0.85) / total) * 100;
+            this.tuningPct = Math.round(accuracy);
         }
 
-        const accuracy = ((this.perfectCount + this.goodCount * 0.7) / total) * 100;
-        const pct = Math.round(accuracy);
-        const data = this.getTuningData(pct);
-        this.tuningPercent.setText(data.label).setColor(data.color);
-        this.tuningProse.setText(data.prose);
+        const data = this.getTuningData(this.tuningPct);
+        this.tuningPercentText.setText(data.label).setColor(data.color);
+        this.tuningProseText.setText(data.prose);
 
-        // Fail condition check
+        // Update fill bar width and color
+        const fillBarW = 320;
+        this.tuningFill.width = fillBarW * (this.tuningPct / 100);
+        this.tuningFill.setFillStyle(data.fillColor);
+
+        // Fail condition
         if (!this.isFailing && !this.failTimer) {
-            if (pct < 50) {
+            if (this.tuningPct < 50) {
                 this.failTimer = this.time.delayedCall(50000, () => {
                     this.triggerTapeSlowdown();
                 });
                 this.failWarning = true;
             }
         } else if (this.failTimer && this.failWarning) {
-            if (pct >= 50) {
+            if (this.tuningPct >= 50) {
                 this.failTimer.remove();
                 this.failTimer = null;
                 this.failWarning = false;
