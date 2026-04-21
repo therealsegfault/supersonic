@@ -426,14 +426,16 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
-    handleInput(type) {
+    handleInput(type, key) {
         const now = this.getCurrentTimeMs();
         let candidate = null;
         let bestOffset = Infinity;
 
         this.notes.forEach(note => {
-            if (note.hit || note.missed) return;
+            if (note.missed) return;
             if (note.type !== type) return;
+            if (note.type === NOTE_TYPE.CUBE && note.holdStartMs >= 0) return;
+            if (note.hit && note.type !== NOTE_TYPE.PYRAMID) return;
             const offset = Math.abs(note.hitTimeMs - now);
             if (offset <= MAX_HIT_WINDOW_MS && offset < bestOffset) {
                 candidate = note;
@@ -441,8 +443,87 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-        candidate ? this.hitNote(candidate, bestOffset) : this.registerMiss();
+        if (!candidate) return;
+
+        if (candidate.type === NOTE_TYPE.CUBE) {
+            this.startHold(candidate, bestOffset, key);
+        } else if (candidate.type === NOTE_TYPE.PYRAMID) {
+            this.handleMultihit(candidate, bestOffset);
+        } else {
+            this.hitNote(candidate, bestOffset);
+        }
     }
+
+    startHold(note, offset, key) {
+        const isPerfect = offset <= PERFECT_WINDOW_MS;
+        note.holdStartMs = this.getCurrentTimeMs();
+        note.holdKey = key;
+        this.heldNotes.set(key, note);
+        note.gameObject?.setFillStyle(isPerfect ? 0xffd700 : 0x88ccff);
+        this.showJudgement('HOLD', '#ff44aa');
+    }
+
+    handleRelease(key) {
+        const note = this.heldNotes.get(key);
+        if (!note) return;
+        this.heldNotes.delete(key);
+
+        const now = this.getCurrentTimeMs();
+        const expectedDuration = note.duration || 500;
+        const releaseOffset = Math.abs(now - (note.hitTimeMs + expectedDuration));
+        const isPerfect = releaseOffset <= PERFECT_WINDOW_MS;
+
+        note.hit = true;
+        isPerfect ? this.perfectCount++ : this.goodCount++;
+        this.combo++;
+
+        this.showJudgement(isPerfect ? 'PERFECT' : 'GOOD', isPerfect ? '#00ffb4' : '#4488ff');
+        this.updateComboDisplay();
+        this.updateScoreDisplay();
+        this.updateTuning();
+        this.triggerCinematic(isPerfect);
+        this.spawnHitParticles(note);
+        note.tailObject?.destroy();
+        note.gameObject?.destroy();
+        note.glowObject?.destroy();
+    }
+
+    handleMultihit(note, offset) {
+        const count = (this.activeMultihits.get(note) || 0) + 1;
+        this.activeMultihits.set(note, count);
+
+        if (count === 1) {
+            note.gameObject?.setFillStyle(0xffaa00);
+            this.showJudgement('HIT!', '#44ffaa');
+            if (note.bubbleObject) {
+                this.tweens.add({
+                    targets: note.bubbleObject,
+                    scaleX: 2,
+                    scaleY: 2,
+                    alpha: 0,
+                    duration: 200,
+                    ease: 'Sine.easeOut',
+                    onComplete: () => note.bubbleObject?.destroy()
+                });
+                note.bubbleObject = null;
+            }
+        } else if (count >= 2) {
+            this.activeMultihits.delete(note);
+            note.hit = true;
+            const isPerfect = offset <= PERFECT_WINDOW_MS;
+            isPerfect ? this.perfectCount++ : this.goodCount++;
+            this.combo++;
+            this.showJudgement(isPerfect ? 'PERFECT' : 'GOOD', isPerfect ? '#00ffb4' : '#4488ff');
+            this.updateComboDisplay();
+            this.updateScoreDisplay();
+            this.updateTuning();
+            this.triggerCinematic(isPerfect);
+            this.spawnHitParticles(note);
+            note.glowObject?.destroy();
+            this.time.delayedCall(120, () => note.gameObject?.destroy());
+        }
+    }
+
 
     hitNote(note, offset) {
         note.hit = true;
