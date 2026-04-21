@@ -1,13 +1,30 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>supersonic</title>
-  </head>
-  <body>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'SuperBubble';
+            src: url('/src/assets/fonts/superbubble.ttf') format('truetype');
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; overflow: hidden; }
+        /* Force font load before Phaser renders */
+        .font-preload {
+            font-family: 'SuperBubble', 'Fira Sans';
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="font-preload">.</div>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
-  </body>
+</body>
 </html>

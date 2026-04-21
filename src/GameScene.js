@@ -38,9 +38,20 @@ export class GameScene extends Phaser.Scene {
         this.goodCount = 0;
         this.missCount = 0;
         this.songDurationMs = 14000;
+        this.audioContext = null;
+        this.audioSource = null;
+        this.audioBuffer = null;
+        this.gainNode = null;
+        this.isFailing = false;
+        this.failTimer = null;
+        this.failWarning = false;
     }
 
     create() {
+    this.loadAudio().then(() => {
+        this.startAudio();
+    });
+
         this.startTime = this.time.now;
         this.cx = this.scale.width / 2;
         this.cy = this.scale.height / 2;
@@ -130,6 +141,109 @@ export class GameScene extends Phaser.Scene {
         this.updateTuning();
     }
 
+    async loadAudio() {
+        this.audioContext = new AudioContext();
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.connect(this.audioContext.destination);
+
+        const response = await fetch('/src/assets/audio/tellmeyouknow.mp3');
+        const arrayBuffer = await response.arrayBuffer();
+        this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    }
+
+    startAudio() {
+        if (!this.audioBuffer) return;
+        this.audioSource = this.audioContext.createBufferSource();
+        this.audioSource.buffer = this.audioBuffer;
+        this.audioSource.connect(this.gainNode);
+        this.audioSource.start(0);
+    }
+
+    triggerTapeSlowdown() {
+        if (this.isFailing) return;
+        this.isFailing = true;
+
+        const source = this.audioSource;
+        const ctx = this.audioContext;
+        if (!source) return;
+
+        source.playbackRate.setValueAtTime(1, ctx.currentTime);
+        source.playbackRate.linearRampToValueAtTime(0, ctx.currentTime + 2);
+
+        this.gainNode.gain.setValueAtTime(1, ctx.currentTime);
+        this.gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
+
+        this.cameras.main.shake(200, 0.01);
+
+        this.time.delayedCall(300, () => {
+            this.cameras.main.shake(150, 0.008);
+        });
+
+        this.time.delayedCall(800, () => {
+            this.cameras.main.shake(100, 0.005);
+        });
+
+        this.time.delayedCall(1200, () => {
+            this.cameras.main.fadeOut(800, 0, 0, 0);
+        });
+
+        this.time.delayedCall(2000, () => {
+            this.showFailScreen();
+        });
+    }
+
+    showFailScreen() {
+        const cx = this.scale.width / 2;
+        const cy = this.scale.height / 2;
+        const pct = this.getCurrentTuningPct();
+
+        const notCleared = this.add.text(cx, cy - 40, 'NOT CLEARED', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '48px',
+            fontStyle: 'bold',
+            color: '#ff3078',
+        }).setOrigin(0.5).setDepth(20).setAlpha(0);
+
+        const pctText = this.add.text(cx, cy + 20, `${pct}% tuned`, {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '28px',
+            color: '#aaaaaa',
+            fontStyle: 'italic'
+        }).setOrigin(0.5).setDepth(20).setAlpha(0);
+
+        const continueText = this.add.text(cx, cy + 60, 'press any key to continue', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '16px',
+            color: '#555555',
+        }).setOrigin(0.5).setDepth(20).setAlpha(0);
+
+        this.cameras.main.fadeIn(600, 0, 0, 0);
+
+        [notCleared, pctText, continueText].forEach(c => {
+            this.tweens.add({
+                targets: c,
+                alpha: 1,
+                duration: 600,
+                ease: 'Sine.easeIn'
+            });
+        });
+
+        this.input.keyboard.once('keydown', () => {
+            this.audioContext?.close();
+            this.cameras.main.fadeOut(400, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start('MenuScene');
+            });
+        });
+    }
+
+    getCurrentTuningPct() {
+        const total = this.perfectCount + this.goodCount + this.missCount;
+        if (total === 0) return 100;
+        const accuracy = ((this.perfectCount + this.goodCount * 0.7) / total) * 100;
+        return Math.round(accuracy);
+    }
+
     getSpawnPosition(direction) {
         const w = this.scale.width;
         const h = this.scale.height;
@@ -177,6 +291,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     update() {
+        if (this.isFailing) return;
+
         const now = this.getCurrentTimeMs();
 
         // Progress bar
@@ -384,6 +500,22 @@ export class GameScene extends Phaser.Scene {
         const data = this.getTuningData(pct);
         this.tuningPercent.setText(data.label).setColor(data.color);
         this.tuningProse.setText(data.prose);
+
+        // Fail condition check
+        if (!this.isFailing && !this.failTimer) {
+            if (pct < 50) {
+                this.failTimer = this.time.delayedCall(50000, () => {
+                    this.triggerTapeSlowdown();
+                });
+                this.failWarning = true;
+            }
+        } else if (this.failTimer && this.failWarning) {
+            if (pct >= 50) {
+                this.failTimer.remove();
+                this.failTimer = null;
+                this.failWarning = false;
+            }
+        }
     }
 
     spawnHitParticles(note) {
