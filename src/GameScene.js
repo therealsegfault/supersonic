@@ -350,6 +350,23 @@ export class GameScene extends Phaser.Scene {
                 const scale = Phaser.Math.Linear(0.2, 1.0, progress);
                 note.gameObject.setScale(scale);
                 if (note.glowObject) note.glowObject.setScale(scale);
+
+                // Tail follows cube toward spawn
+                if (note.tailObject) {
+                    const spawn2 = this.getSpawnPosition(note.direction);
+                    const angle = Phaser.Math.Angle.Between(this.cx, this.cy, spawn2.x, spawn2.y);
+                    note.tailObject.x = note.gameObject.x + Math.cos(angle) * 40 * scale;
+                    note.tailObject.y = note.gameObject.y + Math.sin(angle) * 40 * scale;
+                    note.tailObject.setRotation(angle);
+                    note.tailObject.setScale(scale);
+                }
+
+                // Bubble follows pyramid
+                if (note.bubbleObject) {
+                    note.bubbleObject.x = note.gameObject.x;
+                    note.bubbleObject.y = note.gameObject.y;
+                    note.bubbleObject.setScale(scale);
+                }
             }
 
             if (now - note.hitTimeMs > MISS_WINDOW_MS) {
@@ -394,6 +411,19 @@ export class GameScene extends Phaser.Scene {
         }
 
         note.gameObject = obj;
+
+        // ── Cube tail ──
+        if (note.type === NOTE_TYPE.CUBE) {
+            const tail = this.add.rectangle(spawn.x, spawn.y, 60, 10, color, 0.4);
+            note.tailObject = tail;
+        }
+
+        // ── Pyramid bubble ──
+        if (note.type === NOTE_TYPE.PYRAMID) {
+            const bubble = this.add.circle(spawn.x, spawn.y, 48, color, 0.2);
+            bubble.setStrokeStyle(2, color, 0.6);
+            note.bubbleObject = bubble;
+        }
     }
 
     handleInput(type) {
