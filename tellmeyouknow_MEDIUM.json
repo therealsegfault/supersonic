@@ -1,0 +1,90 @@
+{
+  "song": "tellmeyouknow",
+  "bpm": 96,
+  "difficulty": "MEDIUM",
+  "durationMs": 197717,
+  "totalNotes": 10,
+  "sections": [],
+  "notes": [
+    {
+      "t": 2188,
+      "shape": "sphere",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 3281,
+      "shape": "sphere",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 1,
+      "duration": 0
+    },
+    {
+      "t": 5156,
+      "shape": "pyramid",
+      "dir": "right",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 65469,
+      "shape": "pyramid",
+      "dir": "topleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 75469,
+      "shape": "pyramid",
+      "dir": "bottomleft",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 112969,
+      "shape": "pyramid",
+      "dir": "bottomright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 149688,
+      "shape": "pyramid",
+      "dir": "topright",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 170469,
+      "shape": "pyramid",
+      "dir": "bottom",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 180469,
+      "shape": "pyramid",
+      "dir": "top",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    },
+    {
+      "t": 194688,
+      "shape": "cube",
+      "dir": "left",
+      "velocity": 1,
+      "intensity": 3,
+      "duration": 0
+    }
+  ]
+}

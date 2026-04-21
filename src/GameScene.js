@@ -24,6 +24,9 @@ class Note {
         this.missed = false;
         this.gameObject = null;
         this.glowObject = null;
+        this.holdStartMs = -1;
+        this.holdKey = null;
+        this.hitCount = 0;
     }
 }
 
@@ -48,6 +51,8 @@ export class GameScene extends Phaser.Scene {
         this.failTimer = null;
         this.failWarning = false;
         this.tuningPct = 100;
+        this.heldNotes = new Map();   // key -> note being held
+        this.activeMultihits = new Map(); // note -> hit count
     }
 
     create() {
@@ -168,9 +173,12 @@ export class GameScene extends Phaser.Scene {
 
         // Input
         this.input.keyboard.addCapture(['D', 'F', 'J', 'K']);
-        this.input.keyboard.on('keydown-D', () => this.handleInput(NOTE_TYPE.SPHERE));
-        this.input.keyboard.on('keydown-F', () => this.handleInput(NOTE_TYPE.CUBE));
-        this.input.keyboard.on('keydown-J', () => this.handleInput(NOTE_TYPE.PYRAMID));
+        this.input.keyboard.on('keydown-D', () => this.handleInput(NOTE_TYPE.SPHERE, 'D'));
+        this.input.keyboard.on('keydown-F', () => this.handleInput(NOTE_TYPE.CUBE, 'F'));
+        this.input.keyboard.on('keydown-J', () => this.handleInput(NOTE_TYPE.PYRAMID, 'J'));
+        this.input.keyboard.on('keyup-D', () => this.handleRelease('D'));
+        this.input.keyboard.on('keyup-F', () => this.handleRelease('F'));
+        this.input.keyboard.on('keyup-J', () => this.handleRelease('J'));
 
         // Fade in
         this.cameras.main.fadeIn(400, 0, 0, 0);
