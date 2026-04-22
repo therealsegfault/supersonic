@@ -3,175 +3,357 @@ import * as Phaser from 'phaser';
 export class MenuScene extends Phaser.Scene {
     constructor() {
         super('MenuScene');
+        this.menuItems = ['PLAY', 'ARCADE', 'OPTIONS', 'CREDITS'];
+        this.selectedIndex = 0;
+        this.optionsOpen = false;
     }
 
     create() {
-        const cx = this.scale.width / 2;
-        const cy = this.scale.height / 2;
+        const W = this.scale.width;
+        const H = this.scale.height;
+        const cx = W / 2;
+        const cy = H / 2;
 
-        // ── Ambient floating note shapes ──
-        this.shapes = [];
-        for (let i = 0; i < 18; i++) {
-            this.spawnAmbientShape();
+        // ── Background — dark room ──
+        this.add.rectangle(cx, cy, W, H, 0x0a0a0a);
+
+        // Subtle noise grain overlay via tiled graphics
+        const grain = this.add.graphics();
+        for (let i = 0; i < 800; i++) {
+            const gx = Phaser.Math.Between(0, W);
+            const gy = Phaser.Math.Between(0, H);
+            const a = Phaser.Math.FloatBetween(0.02, 0.06);
+            grain.fillStyle(0xffffff, a);
+            grain.fillRect(gx, gy, 1, 1);
         }
 
-        // ── Title ──
-        // Shadow/aberration layers
-        this.add.text(cx + 3, cy - 160 + 3, 'SUPERSONIC', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '96px',
-            fontStyle: 'bold',
-            color: '#ff0055',
-        }).setOrigin(0.5).setAlpha(0.5);
+        // ── Boombox body ──
+        const BW = Math.min(W * 0.82, 1100);
+        const BH = Math.min(H * 0.72, 420);
+        const BX = cx - BW / 2;
+        const BY = cy - BH / 2;
 
-        this.add.text(cx - 3, cy - 160 - 3, 'SUPERSONIC', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '96px',
-            fontStyle: 'bold',
-            color: '#0055ff',
-        }).setOrigin(0.5).setAlpha(0.5);
+        // Drop shadow
+        this.add.rectangle(cx + 8, cy + 10, BW, BH, 0x000000, 0.5).setOrigin(0.5);
 
-        // Main title
-        this.titleText = this.add.text(cx, cy - 160, 'SUPERSONIC', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '96px',
-            fontStyle: 'bold',
-            color: '#ffffff',
-        }).setOrigin(0.5);
+        // Main body — worn silver
+        const body = this.add.graphics();
+        body.fillStyle(0xc8c8c8);
+        body.fillRoundedRect(BX, BY, BW, BH, 18);
 
-        // ── Subtitle ──
-        this.add.text(cx, cy - 80, 'a game about feeling it', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '20px',
-            color: '#888888',
-            fontStyle: 'italic'
-        }).setOrigin(0.5);
+        // Worn edge highlight top
+        body.fillStyle(0xe8e8e8);
+        body.fillRoundedRect(BX, BY, BW, 6, { tl: 18, tr: 18, bl: 0, br: 0 });
 
-        // ── Start button ──
-        const btnW = 280;
-        const btnH = 64;
-        const btnX = cx - btnW / 2;
-        const btnY = cy + 20;
+        // Worn shadow bottom
+        body.fillStyle(0x909090);
+        body.fillRoundedRect(BX, BY + BH - 6, BW, 6, { tl: 0, tr: 0, bl: 18, br: 18 });
 
-        this.btnBg = this.add.rectangle(cx, cy + 52, btnW, btnH, 0xffffff, 0)
-            .setStrokeStyle(2, 0xffffff, 0.6)
-            .setInteractive({ useHandCursor: true });
+        // Yellowed plastic panel center
+        body.fillStyle(0xd4c89a, 0.3);
+        body.fillRoundedRect(BX + BW * 0.28, BY + 12, BW * 0.44, BH - 24, 10);
 
-        this.btnText = this.add.text(cx, cy + 52, 'START', {
-            fontFamily: 'Fira Sans, sans-serif',
+        // Screw heads — four corners
+        const screwPositions = [
+            [BX + 22, BY + 22], [BX + BW - 22, BY + 22],
+            [BX + 22, BY + BH - 22], [BX + BW - 22, BY + BH - 22]
+        ];
+        screwPositions.forEach(([sx, sy]) => {
+            body.fillStyle(0x888888);
+            body.fillCircle(sx, sy, 5);
+            body.fillStyle(0x666666);
+            body.fillRect(sx - 3, sy - 0.5, 6, 1);
+            body.fillRect(sx - 0.5, sy - 3, 1, 6);
+        });
+
+        // ── Left speaker grille ──
+        this.drawSpeakerGrille(BX + 14, BY + 30, BW * 0.22, BH - 60);
+
+        // ── Right speaker grille ──
+        this.drawSpeakerGrille(BX + BW - 14 - BW * 0.22, BY + 30, BW * 0.22, BH - 60);
+
+        // ── Center panel ──
+        const CPX = BX + BW * 0.28 + 8;
+        const CPW = BW * 0.44 - 16;
+        const CPY = BY + 16;
+        const CPH = BH - 32;
+
+        // ── VFD Display ──
+        const VFH = CPH * 0.32;
+        const VFY = CPY + 10;
+
+        // Display bezel
+        const disp = this.add.graphics();
+        disp.fillStyle(0x1a1a1a);
+        disp.fillRoundedRect(CPX, VFY, CPW, VFH, 6);
+
+        // VFD glow bg
+        disp.fillStyle(0x0a1a0a);
+        disp.fillRoundedRect(CPX + 4, VFY + 4, CPW - 8, VFH - 8, 4);
+
+        // Display glow effect
+        const glowRect = this.add.rectangle(
+            CPX + CPW / 2, VFY + VFH / 2,
+            CPW - 8, VFH - 8,
+            0x00ff44, 0.04
+        ).setOrigin(0.5);
+
+        // VFD text — selected item
+        this.vfdText = this.add.text(CPX + CPW / 2, VFY + VFH / 2 - 8, this.menuItems[0], {
+            fontFamily: 'Fira Sans, monospace',
             fontSize: '28px',
             fontStyle: 'bold',
-            color: '#ffffff',
-            letterSpacing: 8,
+            color: '#00ff88',
+            shadow: { offsetX: 0, offsetY: 0, color: '#00ff44', blur: 12, fill: true }
         }).setOrigin(0.5);
 
-        // Button pulse animation
+        // VFD subtitle — navigation hint
+        this.vfdSub = this.add.text(CPX + CPW / 2, VFY + VFH / 2 + 16, '◄ ►  to navigate', {
+            fontFamily: 'Fira Sans, monospace',
+            fontSize: '11px',
+            color: '#005522',
+        }).setOrigin(0.5);
+
+        // ── Tape deck ──
+        const TDY = VFY + VFH + 10;
+        const TDH = CPH * 0.28;
+        const TDW = CPW * 0.72;
+        const TDX = CPX + (CPW - TDW) / 2;
+
+        // Tape deck window
+        const tape = this.add.graphics();
+        tape.fillStyle(0x111111);
+        tape.fillRoundedRect(TDX, TDY, TDW, TDH, 6);
+        tape.fillStyle(0x1a1208);
+        tape.fillRoundedRect(TDX + 3, TDY + 3, TDW - 6, TDH - 6, 4);
+
+        // Cassette body
+        const cassW = TDW - 20;
+        const cassH = TDH - 14;
+        const cassX = TDX + 10;
+        const cassY = TDY + 7;
+
+        tape.fillStyle(0x2a1f0a);
+        tape.fillRoundedRect(cassX, cassY, cassW, cassH, 4);
+
+        // Cassette label
+        tape.fillStyle(0xd4a843);
+        tape.fillRoundedRect(cassX + cassW * 0.15, cassY + 4, cassW * 0.7, cassH * 0.45, 2);
+
+        // Label text — the secret detail
+        this.add.text(
+            cassX + cassW * 0.15 + (cassW * 0.7) / 2,
+            cassY + 4 + (cassH * 0.45) / 2,
+            'do no harm  ·  side A',
+            {
+                fontFamily: 'Fira Sans, sans-serif',
+                fontSize: '8px',
+                color: '#3a1a00',
+                fontStyle: 'italic'
+            }
+        ).setOrigin(0.5);
+
+        // Tape reels
+        const reelY = cassY + cassH * 0.72;
+        const reelR = cassH * 0.22;
+        const reel1X = cassX + cassW * 0.28;
+        const reel2X = cassX + cassW * 0.72;
+
+        tape.fillStyle(0x111111);
+        tape.fillCircle(reel1X, reelY, reelR);
+        tape.fillCircle(reel2X, reelY, reelR);
+
+        // Reel spokes — animated
+        this.reel1 = this.add.graphics();
+        this.reel2 = this.add.graphics();
+        this.reel1X = reel1X;
+        this.reel1Y = reelY;
+        this.reel2X = reel2X;
+        this.reel2Y = reelY;
+        this.reelR = reelR;
+        this.reelAngle = 0;
+        this.drawReels();
+
+        // ── Buttons ──
+        const BTY = TDY + TDH + 14;
+        const BTH = CPH - (BTY - CPY) - 8;
+
+        // RW button
+        this.rwBtn = this.createButton(CPX + CPW * 0.08, BTY, CPW * 0.18, BTH * 0.55, '◄◄', 0x555555, () => this.navigate(-1));
+
+        // FF button
+        this.ffBtn = this.createButton(CPX + CPW * 0.74, BTY, CPW * 0.18, BTH * 0.55, '►►', 0x555555, () => this.navigate(1));
+
+        // PLAY button — bigger, center
+        this.playBtn = this.createButton(CPX + CPW * 0.38, BTY - 4, CPW * 0.24, BTH * 0.65, '▶', 0x2a5a2a, () => this.startGame());
+
+        // STOP button
+        this.stopBtn = this.createButton(CPX + CPW * 0.08, BTY + BTH * 0.62, CPW * 0.18, BTH * 0.38, '■', 0x444444, () => {});
+
+        // OPT button
+        this.optBtn = this.createButton(CPX + CPW * 0.74, BTY + BTH * 0.62, CPW * 0.18, BTH * 0.38, 'OPT', 0x444444, () => this.toggleOptions());
+
+        // ── Keyboard input ──
+        this.input.keyboard.addCapture(['LEFT', 'RIGHT', 'ENTER', 'SPACE', 'O']);
+        this.input.keyboard.on('keydown-LEFT',  () => this.navigate(-1));
+        this.input.keyboard.on('keydown-RIGHT', () => this.navigate(1));
+        this.input.keyboard.on('keydown-ENTER', () => this.startGame());
+        this.input.keyboard.on('keydown-SPACE', () => this.startGame());
+
+        // ── Version tag ──
+        this.add.text(W - 16, H - 16, 'SUPERSONIC  proto v0.0.1', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '11px',
+            color: '#333333',
+        }).setOrigin(1, 1);
+
+        // ── Fade in ──
+        this.cameras.main.fadeIn(800, 0, 0, 0);
+
+        // ── VFD pulse tween ──
         this.tweens.add({
-            targets: [this.btnBg, this.btnText],
-            alpha: { from: 0.6, to: 1 },
-            duration: 900,
+            targets: glowRect,
+            alpha: { from: 0.04, to: 0.08 },
+            duration: 1800,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+    }
 
-        // Button hover
-        this.btnBg.on('pointerover', () => {
-            this.btnBg.setStrokeStyle(2, 0x00ffb4, 1);
-            this.btnText.setColor('#00ffb4');
-            this.tweens.getTweensOf([this.btnBg, this.btnText]).forEach(t => t.stop());
-            this.btnBg.setAlpha(1);
-            this.btnText.setAlpha(1);
+    drawSpeakerGrille(x, y, w, h) {
+        const g = this.add.graphics();
+        const cols = Math.floor(w / 10);
+        const rows = Math.floor(h / 10);
+        const startX = x + (w - cols * 10) / 2;
+        const startY = y + (h - rows * 10) / 2;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const px = startX + c * 10 + 2;
+                const py = startY + r * 10 + 2;
+                g.fillStyle(0x888888, 0.6);
+                g.fillCircle(px, py, 2.5);
+                g.fillStyle(0x555555, 0.4);
+                g.fillCircle(px + 0.5, py + 0.5, 2.5);
+            }
+        }
+
+        // Fabric overlay
+        g.fillStyle(0x777777, 0.08);
+        g.fillRect(x, y, w, h);
+    }
+
+    drawReels() {
+        [this.reel1, this.reel2].forEach((reel, idx) => {
+            reel.clear();
+            const rx = idx === 0 ? this.reel1X : this.reel2X;
+            const ry = idx === 0 ? this.reel1Y : this.reel2Y;
+            const r = this.reelR;
+            const angle = this.reelAngle + (idx * Math.PI / 3);
+
+            reel.fillStyle(0x333333);
+            reel.fillCircle(rx, ry, r - 2);
+
+            // Spokes
+            for (let i = 0; i < 3; i++) {
+                const a = angle + (i * Math.PI * 2 / 3);
+                reel.fillStyle(0x666666);
+                reel.fillRect(
+                    rx + Math.cos(a) * 2 - 1,
+                    ry + Math.sin(a) * 2 - 1,
+                    Math.cos(a) * (r - 4),
+                    2
+                );
+            }
+
+            reel.fillStyle(0x222222);
+            reel.fillCircle(rx, ry, r * 0.3);
+        });
+    }
+
+    createButton(x, y, w, h, label, color, callback) {
+        const g = this.add.graphics();
+
+        const draw = (pressed) => {
+            g.clear();
+            // Button body
+            g.fillStyle(pressed ? 0x333333 : color);
+            g.fillRoundedRect(x, y + (pressed ? 2 : 0), w, h - (pressed ? 2 : 0), 5);
+            // Top highlight
+            if (!pressed) {
+                g.fillStyle(0xffffff, 0.15);
+                g.fillRoundedRect(x, y, w, 4, { tl: 5, tr: 5, bl: 0, br: 0 });
+            }
+            // Bottom shadow
+            g.fillStyle(0x000000, 0.3);
+            g.fillRoundedRect(x, y + h - 3, w, 3, { tl: 0, tr: 0, bl: 5, br: 5 });
+        };
+
+        draw(false);
+
+        const txt = this.add.text(x + w / 2, y + h / 2, label, {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: label.length > 2 ? '11px' : '16px',
+            fontStyle: 'bold',
+            color: '#cccccc',
+        }).setOrigin(0.5);
+
+        // Hit area
+        const zone = this.add.zone(x + w / 2, y + h / 2, w, h)
+            .setInteractive({ useHandCursor: true });
+
+        zone.on('pointerdown', () => {
+            draw(true);
+            txt.setY(y + h / 2 + 2);
+            callback();
         });
 
-        this.btnBg.on('pointerout', () => {
-            this.btnBg.setStrokeStyle(2, 0xffffff, 0.6);
-            this.btnText.setColor('#ffffff');
-            this.tweens.add({
-                targets: [this.btnBg, this.btnText],
-                alpha: { from: 0.6, to: 1 },
-                duration: 900,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
+        zone.on('pointerup', () => {
+            draw(false);
+            txt.setY(y + h / 2);
         });
 
-        // Button click → transition
-        this.btnBg.on('pointerdown', () => {
-            this.cameras.main.fadeOut(400, 0, 0, 0);
+        zone.on('pointerout', () => {
+            draw(false);
+            txt.setY(y + h / 2);
+        });
+
+        return { g, txt, zone };
+    }
+
+    navigate(dir) {
+        this.selectedIndex = (this.selectedIndex + dir + this.menuItems.length) % this.menuItems.length;
+        this.vfdText.setText(this.menuItems[this.selectedIndex]);
+
+        // Click feel — brief dim
+        this.tweens.add({
+            targets: this.vfdText,
+            alpha: { from: 0.3, to: 1 },
+            duration: 80,
+            ease: 'Linear'
+        });
+    }
+
+    toggleOptions() {
+        this.optionsOpen = !this.optionsOpen;
+        // Placeholder — options panel coming soon
+        this.vfdSub.setText(this.optionsOpen ? 'OPTIONS  (coming soon)' : '◄ ►  to navigate');
+    }
+
+    startGame() {
+        const item = this.menuItems[this.selectedIndex];
+        if (item === 'PLAY' || item === 'ARCADE') {
+            this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 this.scene.start('GameScene');
             });
-        });
-
-        // ── Version tag ──
-        this.add.text(16, this.scale.height - 28, 'PROTO v0.0.1', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '13px',
-            color: '#444444',
-        });
-
-        // ── Fade in ──
-        this.cameras.main.fadeIn(600, 0, 0, 0);
-
-        // ── Ambient shape spawner ──
-        this.time.addEvent({
-            delay: 1200,
-            callback: this.spawnAmbientShape,
-            callbackScope: this,
-            loop: true
-        });
-    }
-
-    spawnAmbientShape() {
-        const w = this.scale.width;
-        const h = this.scale.height;
-
-        const types = ['circle', 'rect', 'triangle'];
-        const type = types[Phaser.Math.Between(0, 2)];
-        const colors = [0x4488ff, 0xff44aa, 0x44ffaa, 0xffffff];
-        const color = colors[Phaser.Math.Between(0, 3)];
-        const size = Phaser.Math.Between(6, 22);
-
-        // Spawn from random edge
-        const edge = Phaser.Math.Between(0, 3);
-        let x, y;
-        if (edge === 0) { x = Phaser.Math.Between(0, w); y = -40; }
-        else if (edge === 1) { x = w + 40; y = Phaser.Math.Between(0, h); }
-        else if (edge === 2) { x = Phaser.Math.Between(0, w); y = h + 40; }
-        else { x = -40; y = Phaser.Math.Between(0, h); }
-
-        let shape;
-        if (type === 'circle') {
-            shape = this.add.circle(x, y, size, color, 0.15);
-        } else if (type === 'rect') {
-            shape = this.add.rectangle(x, y, size * 2, size * 2, color, 0.15);
-        } else {
-            shape = this.add.triangle(x, y, 0, size * 2, size * 2, -size, -size * 2, -size, color, 0.15);
         }
-
-        // Drift toward center loosely
-        const angle = Phaser.Math.Angle.Between(x, y, w / 2, h / 2);
-        const speed = Phaser.Math.Between(20, 60);
-        const duration = Phaser.Math.Between(6000, 14000);
-
-        this.tweens.add({
-            targets: shape,
-            x: x + Math.cos(angle) * speed * (duration / 1000),
-            y: y + Math.sin(angle) * speed * (duration / 1000),
-            alpha: { from: 0, to: 0.12 },
-            duration: duration,
-            ease: 'Linear',
-            onComplete: () => shape.destroy()
-        });
     }
 
     update() {
-        // Gentle title float
-        if (this.titleText) {
-            this.titleText.y = (this.scale.height / 2 - 160) +
-                Math.sin(this.time.now / 1800) * 4;
-        }
+        // Spin reels
+        this.reelAngle += 0.015;
+        this.drawReels();
     }
 }
