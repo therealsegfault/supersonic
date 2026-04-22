@@ -427,37 +427,38 @@ export class MenuScene extends Phaser.Scene {
 
             try {
                 const { autochartFromFile } = await import('./Autochart.js');
+                const { saveChart, saveSong, saveAudio } = await import('./DB.js');
                 const difficulties = ['EZ', 'MEDIUM', 'HARD'];
                 const charts = {};
-
-                for (const diff of difficulties) {
-                    this.importStatus.setText(`charting ${diff}...`).setColor('#ffdd00');
-                    const chart = await autochartFromFile(file, bpm, diff);
-                    const key = `${chart.song}_${diff}`;
-                    charts[diff] = `/src/assets/charts/${key}.json`;
-
-                    // Store in sessionStorage for this run
-                    sessionStorage.setItem(`chart_${key}`, JSON.stringify(chart));
-                }
-
-                // Add to manifest in sessionStorage
-                const manifestStr = sessionStorage.getItem('manifest_additions') || '[]';
-                const additions = JSON.parse(manifestStr);
                 const songName = file.name.replace(/\.[^/.]+$/, '');
 
-                additions.push({
+                for (const diff of difficulties) {
+                    const chart = await autochartFromFile(file, bpm, diff, (p) => {
+                        const pct = typeof p === 'number' ? ` ${Math.round(p * 100)}%` : '';
+                        this.importStatus.setText(`charting ${diff}...${pct}`).setColor('#ffdd00');
+                    });
+                    const chartId = `${songName}_${diff}`;
+                    await saveChart(chartId, chart);
+                    charts[diff] = `idb:${chartId}`;
+                }
+
+                // Save audio to IndexedDB for persistence
+                this.importStatus.setText('saving audio...').setColor('#ffdd00');
+                await saveAudio(songName, file);
+
+                const song = {
                     id: songName,
                     title: songName.replace(/_/g, ' '),
                     artist: 'imported',
-                    audio: URL.createObjectURL(file),
+                    audio: `idb-audio:${songName}`,
                     charts,
                     label_color: '#4488ff',
                     label_text_color: '#ffffff',
-                    _blob: true,
-                });
+                    _imported: true,
+                };
 
-                sessionStorage.setItem('manifest_additions', JSON.stringify(additions));
-                this.importStatus.setText(`✓ imported! go to song select`).setColor('#00ff88');
+                await saveSong(song);
+                this.importStatus.setText(`✓ saved! go to song select`).setColor('#00ff88');
 
             } catch (err) {
                 console.error(err);

@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 // ── Timing constants (from SWING) ──
 const PERFECT_WINDOW_MS = 80;
-const MAX_HIT_WINDOW_MS = 180;
+const MAX_HIT_WINDOW_MS = 250;
 const MISS_WINDOW_MS = 180;
 const APPROACH_TIME_MS = 1200;
 
@@ -11,6 +11,12 @@ const NOTE_TYPE = {
     SPHERE: 'sphere',
     CUBE: 'cube',
     PYRAMID: 'pyramid'
+};
+
+const NOTE_COLORS = {
+    sphere:  0x4488ff,
+    cube:    0xff44aa,
+    pyramid: 0x44ffaa,
 };
 
 // ── Note class ──
@@ -300,8 +306,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     async loadChart(chartPath) {
-        const response = await fetch(chartPath);
-        const chart = await response.json();
+        let chart;
+        if (chartPath.startsWith('idb:')) {
+            const { loadChart } = await import('./DB.js');
+            chart = await loadChart(chartPath.slice(4));
+        } else {
+            const response = await fetch(chartPath);
+            chart = await response.json();
+        }
 
         this.songTitle = chart.song;
         this.difficulty = chart.difficulty;
@@ -320,6 +332,40 @@ export class GameScene extends Phaser.Scene {
 
     getCurrentTimeMs() {
         return this.time.now - this.startTime;
+    }
+
+    // ── Bezier curve helpers ──
+    getBezierPoint(p0, cp1, cp2, p1, t) {
+        const mt = 1 - t;
+        return {
+            x: mt*mt*mt*p0.x + 3*mt*mt*t*cp1.x + 3*mt*t*t*cp2.x + t*t*t*p1.x,
+            y: mt*mt*mt*p0.y + 3*mt*mt*t*cp1.y + 3*mt*t*t*cp2.y + t*t*t*p1.y,
+        };
+    }
+
+    getNoteCurve(spawn, direction) {
+        // Control points create a sweeping arc based on spawn direction
+        const cx = this.cx, cy = this.cy;
+        const dx = cx - spawn.x, dy = cy - spawn.y;
+        const perp = { x: -dy, y: dx };
+        const len = Math.sqrt(perp.x*perp.x + perp.y*perp.y);
+        const norm = { x: perp.x/len, y: perp.y/len };
+
+        // Curve magnitude — sphere gentle, cube moderate, pyramid dramatic
+        const mag = direction === 'pyramid' ? 180 : direction === 'cube' ? 100 : 60;
+
+        return {
+            p0: spawn,
+            cp1: {
+                x: spawn.x + dx*0.3 + norm.x*mag,
+                y: spawn.y + dy*0.3 + norm.y*mag,
+            },
+            cp2: {
+                x: spawn.x + dx*0.7 - norm.x*mag*0.5,
+                y: spawn.y + dy*0.7 - norm.y*mag*0.5,
+            },
+            p1: { x: cx, y: cy },
+        };
     }
 
     update() {
@@ -349,38 +395,64 @@ export class GameScene extends Phaser.Scene {
             if (note.gameObject && !note.frozen) {
                 const progress = Math.min(1, (now - note.spawnTimeMs) / APPROACH_TIME_MS);
                 const spawn = this.getSpawnPosition(note.direction);
+                const curve = note.curve || (note.curve = this.getNoteCurve(spawn, note.type));
 
-                note.gameObject.x = Phaser.Math.Linear(spawn.x, this.cx, progress);
-                note.gameObject.y = Phaser.Math.Linear(spawn.y, this.cy, progress);
+                const pos = this.getBezierPoint(curve.p0, curve.cp1, curve.cp2, curve.p1, progress);
+                note.gameObject.x = pos.x;
+                note.gameObject.y = pos.y;
 
                 if (note.glowObject) {
-                    note.glowObject.x = note.gameObject.x;
-                    note.glowObject.y = note.gameObject.y;
+                    note.glowObject.x = pos.x;
+                    note.glowObject.y = pos.y;
                 }
 
                 const scale = Phaser.Math.Linear(0.2, 1.0, progress);
                 note.gameObject.setScale(scale);
                 if (note.glowObject) note.glowObject.setScale(scale);
 
-                // Tail follows cube toward spawn
-                if (note.tailObject) {
-                    const spawn2 = this.getSpawnPosition(note.direction);
-                    const angle = Phaser.Math.Angle.Between(this.cx, this.cy, spawn2.x, spawn2.y);
-                    note.tailObject.x = note.gameObject.x + Math.cos(angle) * 40 * scale;
-                    note.tailObject.y = note.gameObject.y + Math.sin(angle) * 40 * scale;
-                    note.tailObject.setRotation(angle);
-                    note.tailObject.setScale(scale);
+                // ── Cube time-synced tail ──
+                if (note.tailObject && note.tailGraphics) {
+                    const duration = note.duration > 0 ? note.duration : 500;
+                    const holdProgress = note.holdStartMs >= 0
+                        ? Math.min(1, (now - note.holdStartMs) / duration)
+                        : 0;
+
+                    // Draw tail as line along bezier path behind note
+                    note.tailGraphics.clear();
+                    const tailColor = NOTE_COLORS[note.type] || 0xff44aa;
+                    note.tailGraphics.lineStyle(8, tailColor, 0.5);
+                    note.tailGraphics.beginPath();
+
+                    // Tail shrinks from back as hold progresses
+                    const maxTailLength = Math.min(0.4, (duration / 1000) * (1 / APPROACH_TIME_MS) * 1000);
+                    const tailLength = maxTailLength * (1 - holdProgress);
+                    const tailStart = Math.max(0, progress - tailLength);
+                    const steps = 12;
+                    for (let s = 0; s <= steps; s++) {
+                        const t = Phaser.Math.Linear(tailStart, progress, s/steps);
+                        const tp = this.getBezierPoint(curve.p0, curve.cp1, curve.cp2, curve.p1, t);
+                        if (s === 0) note.tailGraphics.moveTo(tp.x, tp.y);
+                        else note.tailGraphics.lineTo(tp.x, tp.y);
+                    }
+                    note.tailGraphics.strokePath();
                 }
 
-                // Bubble follows pyramid
+                // ── Bubble follows pyramid ──
                 if (note.bubbleObject) {
-                    note.bubbleObject.x = note.gameObject.x;
-                    note.bubbleObject.y = note.gameObject.y;
+                    note.bubbleObject.x = pos.x;
+                    note.bubbleObject.y = pos.y;
                     note.bubbleObject.setScale(scale);
+                }
+
+                // ── Pyramid approach bounce ──
+                if (note.type === NOTE_TYPE.PYRAMID && !note.hitCount) {
+                    const bounce = Math.sin(progress * Math.PI * 3) * 8 * (1 - progress);
+                    note.gameObject.y += bounce;
+                    if (note.bubbleObject) note.bubbleObject.y += bounce;
                 }
             }
 
-            if (!note.frozen && now - note.hitTimeMs > MISS_WINDOW_MS) {
+            if (!note.frozen && now > APPROACH_TIME_MS && now - note.hitTimeMs > MISS_WINDOW_MS) {
                 this.missNote(note);
             }
         });
@@ -400,15 +472,18 @@ export class GameScene extends Phaser.Scene {
             [NOTE_TYPE.CUBE]:    0xff44aa,
             [NOTE_TYPE.PYRAMID]: 0x44ffaa,
         };
-        const color = colors[note.type];
+        const color = NOTE_COLORS[note.type];
+
+        // Pre-calculate bezier curve
+        note.curve = this.getNoteCurve(spawn, note.type);
 
         let glow;
         if (note.type === NOTE_TYPE.SPHERE) {
-            glow = this.add.circle(spawn.x, spawn.y, 42, color, 0.15);
+            glow = this.add.circle(spawn.x, spawn.y, 42, color, 0.12);
         } else if (note.type === NOTE_TYPE.CUBE) {
-            glow = this.add.rectangle(spawn.x, spawn.y, 70, 70, color, 0.15);
+            glow = this.add.rectangle(spawn.x, spawn.y, 70, 70, color, 0.12);
         } else {
-            glow = this.add.triangle(spawn.x, spawn.y, 0, 56, 56, -28, -56, -28, color, 0.15);
+            glow = this.add.triangle(spawn.x, spawn.y, 0, 56, 56, -28, -56, -28, color, 0.12);
         }
         note.glowObject = glow;
 
@@ -420,21 +495,100 @@ export class GameScene extends Phaser.Scene {
         } else {
             obj = this.add.triangle(spawn.x, spawn.y, 0, 48, 48, -24, -48, -24, color);
         }
-
         note.gameObject = obj;
 
-        // ── Cube tail ──
+        // ── Cube tail — drawn as bezier path ──
         if (note.type === NOTE_TYPE.CUBE) {
-            const tail = this.add.rectangle(spawn.x, spawn.y, 60, 10, color, 0.4);
-            note.tailObject = tail;
+            note.tailGraphics = this.add.graphics();
+            note.tailObject = true; // flag for update loop
         }
 
         // ── Pyramid bubble ──
         if (note.type === NOTE_TYPE.PYRAMID) {
-            const bubble = this.add.circle(spawn.x, spawn.y, 48, color, 0.2);
-            bubble.setStrokeStyle(2, color, 0.6);
+            const bubble = this.add.circle(spawn.x, spawn.y, 48, color, 0.15);
+            bubble.setStrokeStyle(2, color, 0.5);
             note.bubbleObject = bubble;
         }
+    }
+
+    burstNote(note, isPerfect) {
+        const x = note.gameObject ? note.gameObject.x : this.cx;
+        const y = note.gameObject ? note.gameObject.y : this.cy;
+        const colors = {
+            [NOTE_TYPE.SPHERE]:  0x4488ff,
+            [NOTE_TYPE.CUBE]:    0xff44aa,
+            [NOTE_TYPE.PYRAMID]: 0x44ffaa,
+        };
+        const color = isPerfect ? 0xffd700 : (NOTE_COLORS[note.type] || 0xffffff);
+        const shardCount = isPerfect ? 12 : 8;
+
+        for (let i = 0; i < shardCount; i++) {
+            const angle = (i / shardCount) * Math.PI * 2;
+            const speed = isPerfect ? Phaser.Math.Between(120, 220) : Phaser.Math.Between(60, 140);
+            const shard = this.add.rectangle(x, y, 12, 4, color);
+            shard.setRotation(angle);
+
+            this.tweens.add({
+                targets: shard,
+                x: x + Math.cos(angle) * speed,
+                y: y + Math.sin(angle) * speed,
+                scaleX: 0,
+                scaleY: 0,
+                alpha: 0,
+                duration: isPerfect ? 600 : 350,
+                ease: 'Sine.easeOut',
+                onComplete: () => shard.destroy(),
+            });
+        }
+
+        // White flash
+        const flash = this.add.circle(x, y, isPerfect ? 50 : 30, 0xffffff, 0.9);
+        this.tweens.add({
+            targets: flash,
+            scaleX: 2,
+            scaleY: 2,
+            alpha: 0,
+            duration: 200,
+            ease: 'Sine.easeOut',
+            onComplete: () => flash.destroy(),
+        });
+
+        // Shockwave ring for PERFECT
+        if (isPerfect) {
+            const ring = this.add.circle(x, y, 20, 0xffd700, 0);
+            ring.setStrokeStyle(3, 0xffd700, 1);
+            this.tweens.add({
+                targets: ring,
+                scaleX: 4,
+                scaleY: 4,
+                alpha: 0,
+                duration: 400,
+                ease: 'Sine.easeOut',
+                onComplete: () => ring.destroy(),
+            });
+        }
+    }
+
+    fallNote(note) {
+        if (!note.gameObject) return;
+        const obj = note.gameObject;
+        const glow = note.glowObject;
+        const bubble = note.bubbleObject;
+
+        this.tweens.add({
+            targets: [obj, glow, bubble].filter(Boolean),
+            y: this.scale.height + 100,
+            angle: Phaser.Math.Between(-180, 180),
+            alpha: 0,
+            duration: 600,
+            ease: 'Sine.easeIn',
+            onComplete: () => {
+                obj?.destroy();
+                glow?.destroy();
+                bubble?.destroy();
+                if (note.tailGraphics) note.tailGraphics.destroy();
+            }
+        });
     }
 
     handleInput(type, key) {
@@ -446,6 +600,7 @@ export class GameScene extends Phaser.Scene {
             if (note.missed) return;
             if (note.type !== type) return;
             if (note.type === NOTE_TYPE.CUBE && note.holdStartMs >= 0) return;
+            if (note.type === NOTE_TYPE.CUBE && this.heldNotes.size > 0) return;
             if (note.hit && note.type !== NOTE_TYPE.PYRAMID) return;
             // Frozen pyramid — always hittable, no time window
             if (note.frozen) {
@@ -475,6 +630,7 @@ export class GameScene extends Phaser.Scene {
         const isPerfect = offset <= PERFECT_WINDOW_MS;
         note.holdStartMs = this.getCurrentTimeMs();
         note.holdKey = key;
+        note.hit = true; // prevent auto-miss during hold
         this.heldNotes.set(key, note);
         note.gameObject?.setFillStyle(isPerfect ? 0xffd700 : 0x88ccff);
         this.showJudgement('HOLD', '#ff44aa');
@@ -499,8 +655,8 @@ export class GameScene extends Phaser.Scene {
         this.updateScoreDisplay();
         this.updateTuning();
         this.triggerCinematic(isPerfect);
-        this.spawnHitParticles(note);
-        note.tailObject?.destroy();
+        this.burstNote(note, isPerfect);
+        if (note.tailGraphics) note.tailGraphics.destroy();
         note.gameObject?.destroy();
         note.glowObject?.destroy();
     }
@@ -535,8 +691,9 @@ export class GameScene extends Phaser.Scene {
             this.updateScoreDisplay();
             this.updateTuning();
             this.triggerCinematic(isPerfect);
-            this.spawnHitParticles(note);
+            this.burstNote(note, isPerfect);
             note.glowObject?.destroy();
+            note.bubbleObject?.destroy();
             this.time.delayedCall(120, () => note.gameObject?.destroy());
         }
     }
@@ -553,21 +710,18 @@ export class GameScene extends Phaser.Scene {
         this.updateScoreDisplay();
         this.updateTuning();
         this.triggerCinematic(isPerfect);
-        this.spawnHitParticles(note);
+        this.burstNote(note, isPerfect);
 
-        if (note.gameObject) {
-            note.gameObject.setFillStyle(isPerfect ? 0xffd700 : 0x88ccff);
-            note.glowObject?.destroy();
-            this.time.delayedCall(120, () => note.gameObject?.destroy());
-        }
+        note.gameObject?.destroy();
+        note.glowObject?.destroy();
+        note.bubbleObject?.destroy();
+        if (note.tailGraphics) note.tailGraphics.destroy();
     }
+
 
     missNote(note) {
         note.missed = true;
-        note.gameObject?.destroy();
-        note.glowObject?.destroy();
-        note.tailObject?.destroy();
-        note.bubbleObject?.destroy();
+        this.fallNote(note);
         this.registerMiss();
     }
 
@@ -577,7 +731,7 @@ export class GameScene extends Phaser.Scene {
         this.showJudgement('MISS', '#ff3078');
         this.updateComboDisplay();
         this.updateScoreDisplay();
-        this.updateTuning();
+        this.updateTuning(true);
         this.triggerWhoopsSwing();
     }
 
@@ -669,14 +823,12 @@ export class GameScene extends Phaser.Scene {
         };
     }
 
-    updateTuning() {
-        const total = this.perfectCount + this.goodCount + this.missCount;
-        
-        if (total === 0) {
-            this.tuningPct = 100;
-        } else {
-            const accuracy = ((this.perfectCount + this.goodCount * 0.85) / total) * 100;
-            this.tuningPct = Math.round(accuracy);
+    updateTuning(isMiss = false) {
+        if (isMiss) {
+            // Deduct per miss — scaled to chart length
+            const totalNotes = this.notes.length || 100;
+            const deduction = (100 / totalNotes) * 1.5; // 1.5x MEDIUM multiplier
+            this.tuningPct = Math.max(0, Math.round(this.tuningPct - deduction));
         }
 
         const data = this.getTuningData(this.tuningPct);
@@ -718,7 +870,7 @@ export class GameScene extends Phaser.Scene {
             scale: { start: 0.4, end: 0 },
             lifespan: 400,
             quantity: 12,
-            tint: colors[note.type],
+            tint: NOTE_COLORS[note.type],
         });
 
         this.time.delayedCall(500, () => emitter.destroy());

@@ -24,9 +24,21 @@ export class SongSelectScene extends Phaser.Scene {
         this.manifest = await res.json();
         this.songs = [...this.manifest.songs];
 
-        // Load any session-imported songs
-        const additions = JSON.parse(sessionStorage.getItem('manifest_additions') || '[]');
-        this.songs = [...this.songs, ...additions];
+        // Load imported songs from IndexedDB
+        try {
+            const { loadAllSongs, loadAudio } = await import('./DB.js');
+            const imported = await loadAllSongs();
+            // Resolve audio blob URLs for imported songs
+            for (const song of imported) {
+                if (song.audio && song.audio.startsWith('idb-audio:')) {
+                    const audioId = song.audio.slice(10);
+                    song.audio = await loadAudio(audioId) || song.audio;
+                }
+            }
+            this.songs = [...this.songs, ...imported];
+        } catch (e) {
+            console.warn('Could not load imported songs:', e);
+        }
 
         // Background
         this.add.rectangle(this.cx, this.cy, W, H, 0x0a0a0a);
