@@ -11,7 +11,7 @@ a rhythm game i'm making. still early, but playable.
 
 ## what it's
 
-you hit notes. the camera goes a little crazy when you do it well. the world reacts to how you're playing. it's a rhythm game but i wanted every note hit to feel like a moment instead of just a keypress.
+you hit notes. the camera goes a little crazy when you do it well. the world reacts to how you're playing. it's a rhythm game but i wanted every note hit to feel like an anime battle instead of just a keypress.
 
 it's also a prequel to a bigger game i'm working on, but you don't need to know any of that to play it.
 
