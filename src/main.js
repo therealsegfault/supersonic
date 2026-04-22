@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { BootScene } from './BootScene.js';
 import { MenuScene } from './MenuScene.js';
+import { SongSelectScene } from './SongSelectScene.js';
 import { GameScene } from './GameScene.js';
 
 const config = {
@@ -12,7 +13,7 @@ const config = {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
-    scene: [BootScene, MenuScene, GameScene]
+    scene: [BootScene, MenuScene, SongSelectScene, GameScene]
 };
 
 new Phaser.Game(config);

@@ -55,7 +55,18 @@ export class GameScene extends Phaser.Scene {
         this.activeMultihits = new Map(); // note -> hit count
     }
 
-    create() {
+    create(data) {
+        // Accept dynamic song/chart data from SongSelectScene
+        if (data && data.chartPath) {
+            this.chartPath = data.chartPath;
+            this.audioPath = data.audioPath;
+            this.songTitle = data.songTitle || 'Unknown';
+            this.difficulty = data.difficulty || 'MEDIUM';
+        } else {
+            this.chartPath = '/src/assets/charts/tellmeyouknow_MEDIUM.json';
+            this.audioPath = '/src/assets/audio/tellmeyouknow.mp3';
+        }
+
         this.loadAudio().then(() => this.startAudio());
 
         this.startTime = this.time.now;
@@ -169,7 +180,7 @@ export class GameScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(10);
 
         // Spawn notes
-        this.loadChart('/src/assets/charts/tellmeyouknow_MEDIUM.json');
+        this.loadChart(this.chartPath);
 
         // Input
         this.input.keyboard.addCapture(['D', 'F', 'J', 'K']);
@@ -192,7 +203,7 @@ export class GameScene extends Phaser.Scene {
         this.gainNode = this.audioContext.createGain();
         this.gainNode.connect(this.audioContext.destination);
 
-        const response = await fetch('/src/assets/audio/tellmeyouknow.mp3');
+        const response = await fetch(this.audioPath);
         const arrayBuffer = await response.arrayBuffer();
         this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
     }

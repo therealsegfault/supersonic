@@ -337,8 +337,137 @@ export class MenuScene extends Phaser.Scene {
 
     toggleOptions() {
         this.optionsOpen = !this.optionsOpen;
-        // Placeholder — options panel coming soon
-        this.vfdSub.setText(this.optionsOpen ? 'OPTIONS  (coming soon)' : '◄ ►  to navigate');
+        if (this.optionsOpen) {
+            this.showOptionsPanel();
+        } else {
+            this.hideOptionsPanel();
+        }
+    }
+
+    showOptionsPanel() {
+        const W = this.scale.width;
+        const H = this.scale.height;
+
+        this.optPanel = this.add.container(0, 0);
+
+        const bg = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, 340, 220, 0x111111, 0.96);
+        bg.setStrokeStyle(1, 0x333333);
+
+        const title = this.add.text(W / 2, H / 2 - 85, 'OPTIONS', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '14px',
+            color: '#666666',
+            letterSpacing: 4,
+        }).setOrigin(0.5);
+
+        const importBtn = this.add.text(W / 2, H / 2 - 40, '[ IMPORT SONG ]', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '18px',
+            fontStyle: 'bold',
+            color: '#00ff88',
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        importBtn.on('pointerover', () => importBtn.setColor('#ffffff'));
+        importBtn.on('pointerout',  () => importBtn.setColor('#00ff88'));
+        importBtn.on('pointerdown', () => this.triggerImport());
+
+        const hint = this.add.text(W / 2, H / 2 - 10, 'import an mp3 and autochart it', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '12px',
+            fontStyle: 'italic',
+            color: '#444444',
+        }).setOrigin(0.5);
+
+        this.importStatus = this.add.text(W / 2, H / 2 + 20, '', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '13px',
+            color: '#888888',
+            align: 'center',
+            wordWrap: { width: 300 }
+        }).setOrigin(0.5);
+
+        const closeBtn = this.add.text(W / 2, H / 2 + 70, '[ CLOSE ]', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '14px',
+            color: '#444444',
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        closeBtn.on('pointerdown', () => this.toggleOptions());
+
+        this.optPanel.add([bg, title, importBtn, hint, this.importStatus, closeBtn]);
+        this.optPanel.setDepth(30);
+    }
+
+    hideOptionsPanel() {
+        this.optPanel?.destroy();
+        this.optPanel = null;
+        this.vfdSub.setText('◄ ►  to navigate');
+    }
+
+    triggerImport() {
+        // Create hidden file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'audio/mpeg,audio/mp3,.mp3';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const bpmStr = window.prompt(`BPM for "${file.name}"? (check tunebat.com)`);
+            const bpm = parseFloat(bpmStr);
+            if (!bpm || isNaN(bpm)) {
+                this.importStatus.setText('cancelled or invalid BPM').setColor('#ff3078');
+                return;
+            }
+
+            this.importStatus.setText('analyzing audio...').setColor('#ffdd00');
+
+            try {
+                const { autochartFromFile } = await import('./Autochart.js');
+                const difficulties = ['EZ', 'MEDIUM', 'HARD'];
+                const charts = {};
+
+                for (const diff of difficulties) {
+                    this.importStatus.setText(`charting ${diff}...`).setColor('#ffdd00');
+                    const chart = await autochartFromFile(file, bpm, diff);
+                    const key = `${chart.song}_${diff}`;
+                    charts[diff] = `/src/assets/charts/${key}.json`;
+
+                    // Store in sessionStorage for this run
+                    sessionStorage.setItem(`chart_${key}`, JSON.stringify(chart));
+                }
+
+                // Add to manifest in sessionStorage
+                const manifestStr = sessionStorage.getItem('manifest_additions') || '[]';
+                const additions = JSON.parse(manifestStr);
+                const songName = file.name.replace(/\.[^/.]+$/, '');
+
+                additions.push({
+                    id: songName,
+                    title: songName.replace(/_/g, ' '),
+                    artist: 'imported',
+                    audio: URL.createObjectURL(file),
+                    charts,
+                    label_color: '#4488ff',
+                    label_text_color: '#ffffff',
+                    _blob: true,
+                });
+
+                sessionStorage.setItem('manifest_additions', JSON.stringify(additions));
+                this.importStatus.setText(`✓ imported! go to song select`).setColor('#00ff88');
+
+            } catch (err) {
+                console.error(err);
+                this.importStatus.setText('something went wrong').setColor('#ff3078');
+            }
+
+            document.body.removeChild(input);
+        };
+
+        input.click();
     }
 
     startGame() {
@@ -346,7 +475,7 @@ export class MenuScene extends Phaser.Scene {
         if (item === 'PLAY' || item === 'ARCADE') {
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
-                this.scene.start('GameScene');
+                this.scene.start('SongSelectScene');
             });
         }
     }
