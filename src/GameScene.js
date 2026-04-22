@@ -335,7 +335,7 @@ export class GameScene extends Phaser.Scene {
                 this.spawnNoteVisual(note);
             }
 
-            if (note.gameObject) {
+            if (note.gameObject && !note.frozen) {
                 const progress = Math.min(1, (now - note.spawnTimeMs) / APPROACH_TIME_MS);
                 const spawn = this.getSpawnPosition(note.direction);
 
@@ -369,7 +369,7 @@ export class GameScene extends Phaser.Scene {
                 }
             }
 
-            if (now - note.hitTimeMs > MISS_WINDOW_MS) {
+            if (!note.frozen && now - note.hitTimeMs > MISS_WINDOW_MS) {
                 this.missNote(note);
             }
         });
@@ -436,6 +436,15 @@ export class GameScene extends Phaser.Scene {
             if (note.type !== type) return;
             if (note.type === NOTE_TYPE.CUBE && note.holdStartMs >= 0) return;
             if (note.hit && note.type !== NOTE_TYPE.PYRAMID) return;
+<<<<<<< HEAD
+=======
+            // Frozen pyramid — always hittable, no time window
+            if (note.frozen) {
+                candidate = note;
+                bestOffset = 0;
+                return;
+            }
+>>>>>>> add562d (new song: its coming to a close i guess i should know)
             const offset = Math.abs(note.hitTimeMs - now);
             if (offset <= MAX_HIT_WINDOW_MS && offset < bestOffset) {
                 candidate = note;
@@ -452,6 +461,105 @@ export class GameScene extends Phaser.Scene {
         } else {
             this.hitNote(candidate, bestOffset);
         }
+<<<<<<< HEAD
+=======
+    }
+
+    startHold(note, offset, key) {
+        const isPerfect = offset <= PERFECT_WINDOW_MS;
+        note.holdStartMs = this.getCurrentTimeMs();
+        note.holdKey = key;
+        note.hit = true; // prevent auto-miss during hold
+        this.heldNotes.set(key, note);
+        note.gameObject?.setFillStyle(isPerfect ? 0xffd700 : 0x88ccff);
+        this.showJudgement('HOLD', '#ff44aa');
+    }
+
+    handleRelease(key) {
+        const note = this.heldNotes.get(key);
+        if (!note) return;
+        this.heldNotes.delete(key);
+
+        const now = this.getCurrentTimeMs();
+        const expectedDuration = note.duration || 500;
+        const releaseOffset = Math.abs(now - (note.hitTimeMs + expectedDuration));
+        const isPerfect = releaseOffset <= PERFECT_WINDOW_MS;
+
+        note.hit = true;
+        isPerfect ? this.perfectCount++ : this.goodCount++;
+        this.combo++;
+
+        this.showJudgement(isPerfect ? 'PERFECT' : 'GOOD', isPerfect ? '#00ffb4' : '#4488ff');
+        this.updateComboDisplay();
+        this.updateScoreDisplay();
+        this.updateTuning();
+        this.triggerCinematic(isPerfect);
+        this.spawnHitParticles(note);
+        note.tailObject?.destroy();
+        note.gameObject?.destroy();
+        note.glowObject?.destroy();
+    }
+
+    handleMultihit(note, offset) {
+        const count = (this.activeMultihits.get(note) || 0) + 1;
+        this.activeMultihits.set(note, count);
+
+        if (count === 1) {
+            note.hit = false; // explicitly keep hittable for second hit
+            note.frozen = true; // stop update loop from moving it
+            // Spin away then bounce back
+            if (note.gameObject) {
+                const ox = note.gameObject.x;
+                const oy = note.gameObject.y;
+                this.tweens.add({
+                    targets: note.gameObject,
+                    x: ox + Phaser.Math.Between(-80, 80),
+                    y: oy + Phaser.Math.Between(-80, 80),
+                    angle: 360,
+                    duration: 300,
+                    ease: 'Sine.easeOut',
+                    onComplete: () => {
+                        this.tweens.add({
+                            targets: note.gameObject,
+                            x: this.cx,
+                            y: this.cy - 60,
+                            angle: 0,
+                            duration: 300,
+                            ease: 'Sine.easeIn'
+                        });
+                    }
+                });
+            }
+            note.gameObject?.setFillStyle(0xffaa00);
+            this.showJudgement('HIT!', '#44ffaa');
+            if (note.bubbleObject) {
+                this.tweens.add({
+                    targets: note.bubbleObject,
+                    scaleX: 2,
+                    scaleY: 2,
+                    alpha: 0,
+                    duration: 200,
+                    ease: 'Sine.easeOut',
+                    onComplete: () => note.bubbleObject?.destroy()
+                });
+                note.bubbleObject = null;
+            }
+        } else if (count >= 2) {
+            this.activeMultihits.delete(note);
+            note.hit = true;
+            const isPerfect = offset <= PERFECT_WINDOW_MS;
+            isPerfect ? this.perfectCount++ : this.goodCount++;
+            this.combo++;
+            this.showJudgement(isPerfect ? 'PERFECT' : 'GOOD', isPerfect ? '#00ffb4' : '#4488ff');
+            this.updateComboDisplay();
+            this.updateScoreDisplay();
+            this.updateTuning();
+            this.triggerCinematic(isPerfect);
+            this.spawnHitParticles(note);
+            note.glowObject?.destroy();
+            this.time.delayedCall(120, () => note.gameObject?.destroy());
+        }
+>>>>>>> add562d (new song: its coming to a close i guess i should know)
     }
 
     startHold(note, offset, key) {
@@ -549,6 +657,8 @@ export class GameScene extends Phaser.Scene {
         note.missed = true;
         note.gameObject?.destroy();
         note.glowObject?.destroy();
+        note.tailObject?.destroy();
+        note.bubbleObject?.destroy();
         this.registerMiss();
     }
 
