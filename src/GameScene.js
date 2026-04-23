@@ -63,8 +63,13 @@ export class GameScene extends Phaser.Scene {
         this.cinematicActive = false;
         this.isPaused = false;
         this.pauseStartTime = null;
+        this.mvPath = null;
+        this.mvVideo = null;
+        this.mvReady = false;
+        this.mvSyncInterval = null;
         this.heldNotes = new Map();   // key -> note being held
         this.activeMultihits = new Map(); // note -> hit count
+        this.songEnded = false;
     }
 
     create(data) {
@@ -74,6 +79,7 @@ export class GameScene extends Phaser.Scene {
             this.audioPath = data.audioPath;
             this.songTitle = data.songTitle || 'Unknown';
             this.difficulty = data.difficulty || 'MEDIUM';
+            this.mvPath = data.mvPath || null;
         } else {
             this.chartPath = '/src/assets/charts/tellmeyouknow_MEDIUM.json';
             this.audioPath = '/src/assets/audio/tellmeyouknow.mp3';
@@ -81,6 +87,7 @@ export class GameScene extends Phaser.Scene {
 
         this.startTime = null; // set when audio actually starts
         this.loadAudio().then(() => this.startAudio());
+        this.setupMV();
         this.cx = this.scale.width / 2;
         this.cy = this.scale.height / 2;
 
@@ -161,10 +168,10 @@ export class GameScene extends Phaser.Scene {
 
         // ── Judgement ──
         this.judgementDisplay = this.add.text(this.cx, this.cy - 120, '', {
-            fontFamily: 'Fira Sans, sans-serif',
-            fontSize: '32px',
-            fontStyle: 'bold',
-            color: '#ffffff'
+            fontFamily: 'SuperBubble, sans-serif',
+            fontSize: '36px',
+            color: '#ffffff',
+            shadow: { offsetX: 0, offsetY: 0, color: '#ffffff', blur: 12, fill: true }
         }).setOrigin(0.5).setDepth(10);
 
         // ── Combo ──
@@ -228,11 +235,13 @@ export class GameScene extends Phaser.Scene {
         this.audioStartContextTime = this.audioContext.currentTime;
         this.audioSource.start(0);
         this.startTime = this.time.now;
+        this.startMV();
     }
 
     triggerTapeSlowdown() {
         if (this.isFailing) return;
         this.isFailing = true;
+        this.stopMV();
 
         const source = this.audioSource;
         const ctx = this.audioContext;
@@ -343,37 +352,30 @@ export class GameScene extends Phaser.Scene {
         return (this.audioContext.currentTime - this.audioStartContextTime) * 1000;
     }
 
-    // ── Bezier curve helpers ──
-    getBezierPoint(p0, cp1, cp2, p1, t) {
-        const mt = 1 - t;
+    // ── Orbital approach helpers ──
+    getOrbitAngle(direction) {
         return {
-            x: mt*mt*mt*p0.x + 3*mt*mt*t*cp1.x + 3*mt*t*t*cp2.x + t*t*t*p1.x,
-            y: mt*mt*mt*p0.y + 3*mt*mt*t*cp1.y + 3*mt*t*t*cp2.y + t*t*t*p1.y,
-        };
+            left:        Math.PI,
+            right:       0,
+            top:         -Math.PI / 2,
+            bottom:      Math.PI / 2,
+            topleft:     -(3 * Math.PI / 4),
+            topright:    -(Math.PI / 4),
+            bottomleft:  3 * Math.PI / 4,
+            bottomright: Math.PI / 4,
+        }[direction] ?? 0;
     }
 
-    getNoteCurve(spawn, direction) {
-        // Control points create a sweeping arc based on spawn direction
-        const cx = this.cx, cy = this.cy;
-        const dx = cx - spawn.x, dy = cy - spawn.y;
-        const perp = { x: -dy, y: dx };
-        const len = Math.sqrt(perp.x*perp.x + perp.y*perp.y);
-        const norm = { x: perp.x/len, y: perp.y/len };
-
-        // Curve magnitude — sphere gentle, cube moderate, pyramid dramatic
-        const mag = direction === 'pyramid' ? 180 : direction === 'cube' ? 100 : 60;
-
+    getOrbitPosition(direction, progress, note = null) {
+        const offset     = note?.orbitOffset ?? 0;
+        const sweep      = (note?.orbitSweep  ?? Math.PI * 1.2) * (note?.orbitDir ?? 1);
+        const startAngle = this.getOrbitAngle(direction) + offset;
+        const maxRadius  = Math.hypot(this.cx, this.cy) + 100;
+        const radius     = maxRadius * (1 - progress);
+        const a          = startAngle + progress * sweep;
         return {
-            p0: spawn,
-            cp1: {
-                x: spawn.x + dx*0.3 + norm.x*mag,
-                y: spawn.y + dy*0.3 + norm.y*mag,
-            },
-            cp2: {
-                x: spawn.x + dx*0.7 - norm.x*mag*0.5,
-                y: spawn.y + dy*0.7 - norm.y*mag*0.5,
-            },
-            p1: { x: cx, y: cy },
+            x: this.cx + Math.cos(a) * radius,
+            y: this.cy + Math.sin(a) * radius,
         };
     }
 
@@ -381,6 +383,13 @@ export class GameScene extends Phaser.Scene {
         if (this.isFailing || this.isPaused) return;
 
         const now = this.getCurrentTimeMs();
+
+        // End of song
+        if (!this.songEnded && this.songDurationMs > 0 && now >= this.songDurationMs) {
+            this.songEnded = true;
+            this.endSong();
+            return;
+        }
 
         // Progress bar
         const songProgress = Math.min(1, now / this.songDurationMs);
@@ -403,12 +412,12 @@ export class GameScene extends Phaser.Scene {
 
             if (note.gameObject && !note.frozen) {
                 const progress = Math.min(1, (now - note.spawnTimeMs) / (note.approachMs || APPROACH_TIME_MS));
-                const spawn = this.getSpawnPosition(note.direction);
-                const curve = note.curve || (note.curve = this.getNoteCurve(spawn, note.type));
+                const pos = this.getOrbitPosition(note.direction, progress, note);
 
-                const pos = this.getBezierPoint(curve.p0, curve.cp1, curve.cp2, curve.p1, progress);
                 note.gameObject.x = pos.x;
                 note.gameObject.y = pos.y;
+
+                this.updateTrail(note, pos);
 
                 if (note.glowObject) {
                     note.glowObject.x = pos.x;
@@ -419,28 +428,25 @@ export class GameScene extends Phaser.Scene {
                 note.gameObject.setScale(scale);
                 if (note.glowObject) note.glowObject.setScale(scale);
 
-                // ── Cube time-synced tail ──
+                // ── Cube time-synced tail along orbital path ──
                 if (note.tailObject && note.tailGraphics) {
                     const duration = note.duration > 0 ? note.duration : 500;
                     const holdProgress = note.holdStartMs >= 0
                         ? Math.min(1, (now - note.holdStartMs) / duration)
                         : 0;
 
-                    // Draw tail as line along bezier path behind note
                     note.tailGraphics.clear();
                     const tailColor = NOTE_COLORS[note.type] || 0xff44aa;
                     note.tailGraphics.lineStyle(8, tailColor, 0.5);
                     note.tailGraphics.beginPath();
 
-                    // Tail shrinks from back as hold progresses
-                    // maxTailLength in bezier progress units (0-1)
                     const maxTailLength = Math.min(0.5, duration / (APPROACH_TIME_MS * 2));
                     const tailLength = maxTailLength * (1 - holdProgress);
                     const tailStart = Math.max(0, progress - tailLength);
                     const steps = 12;
                     for (let s = 0; s <= steps; s++) {
-                        const t = Phaser.Math.Linear(tailStart, progress, s/steps);
-                        const tp = this.getBezierPoint(curve.p0, curve.cp1, curve.cp2, curve.p1, t);
+                        const t = Phaser.Math.Linear(tailStart, progress, s / steps);
+                        const tp = this.getOrbitPosition(note.direction, t, note);
                         if (s === 0) note.tailGraphics.moveTo(tp.x, tp.y);
                         else note.tailGraphics.lineTo(tp.x, tp.y);
                     }
@@ -482,16 +488,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     spawnNoteVisual(note) {
-        const spawn = this.getSpawnPosition(note.direction);
-        const colors = {
-            [NOTE_TYPE.SPHERE]:  0x4488ff,
-            [NOTE_TYPE.CUBE]:    0xff44aa,
-            [NOTE_TYPE.PYRAMID]: 0x44ffaa,
-        };
-        const color = NOTE_COLORS[note.type];
+        note.orbitSweep  = Phaser.Math.FloatBetween(Math.PI * 0.65, Math.PI * 1.55);
+        note.orbitOffset = Phaser.Math.FloatBetween(-0.4, 0.4);
+        note.orbitDir    = Phaser.Math.Between(0, 1) ? 1 : -1;
 
-        // Pre-calculate bezier curve
-        note.curve = this.getNoteCurve(spawn, note.type);
+        const spawn = this.getOrbitPosition(note.direction, 0, note);
+        const color = NOTE_COLORS[note.type];
 
         let glow;
         if (note.type === NOTE_TYPE.SPHERE) {
@@ -524,6 +526,30 @@ export class GameScene extends Phaser.Scene {
             const bubble = this.add.circle(spawn.x, spawn.y, 48, color, 0.15);
             bubble.setStrokeStyle(2, color, 0.5);
             note.bubbleObject = bubble;
+        }
+    }
+
+    updateTrail(note, pos) {
+        if (!note.trailPoints) note.trailPoints = [];
+        if (!note.trailGraphics) {
+            note.trailGraphics = this.add.graphics();
+        }
+
+        note.trailPoints.push({ x: pos.x, y: pos.y });
+        if (note.trailPoints.length > 12) note.trailPoints.shift();
+
+        note.trailGraphics.clear();
+        const color = NOTE_COLORS[note.type] || 0xffffff;
+        const pts = note.trailPoints;
+
+        for (let i = 1; i < pts.length; i++) {
+            const alpha = (i / pts.length) * 0.4;
+            const width = (i / pts.length) * 6;
+            note.trailGraphics.lineStyle(width, color, alpha);
+            note.trailGraphics.beginPath();
+            note.trailGraphics.moveTo(pts[i-1].x, pts[i-1].y);
+            note.trailGraphics.lineTo(pts[i].x, pts[i].y);
+            note.trailGraphics.strokePath();
         }
     }
 
@@ -597,35 +623,23 @@ export class GameScene extends Phaser.Scene {
             obj.x || this.cx + 50,
             obj.y || this.cy + 50
         );
-        const driftX = obj.x + Math.cos(angle) * 120;
-        const driftY = obj.y + Math.sin(angle) * 80;
+        if (note.trailGraphics) { note.trailGraphics.destroy(); note.trailGraphics = null; }
 
         const targets = [obj, glow, bubble].filter(Boolean);
 
         this.tweens.add({
             targets,
-            x: driftX,
-            y: driftY,
-            angle: Phaser.Math.Between(-90, 90),
-            alpha: 0.3,
-            duration: 300,
-            ease: 'Sine.easeOut',
+            x: obj.x + Math.cos(angle) * 180,
+            y: obj.y + Math.sin(angle) * 180,
+            alpha: 0,
+            scaleX: 0.2,
+            scaleY: 0.2,
+            angle: Phaser.Math.Between(160, 320),
+            duration: 380,
+            ease: 'Quad.easeOut',
             onComplete: () => {
-                // Orbit loosely then fully fade
-                this.tweens.add({
-                    targets,
-                    x: driftX + Phaser.Math.Between(-40, 40),
-                    y: driftY + 40,
-                    alpha: 0,
-                    duration: 400,
-                    ease: 'Sine.easeIn',
-                    onComplete: () => {
-                        obj?.destroy();
-                        glow?.destroy();
-                        bubble?.destroy();
-                        if (note.tailGraphics) note.tailGraphics.destroy();
-                    }
-                });
+                targets.forEach(o => o?.destroy());
+                if (note.tailGraphics) note.tailGraphics.destroy();
             }
         });
     }
@@ -696,6 +710,7 @@ export class GameScene extends Phaser.Scene {
         this.triggerCinematic(isPerfect);
         this.burstNote(note, isPerfect);
         if (note.tailGraphics) note.tailGraphics.destroy();
+        if (note.trailGraphics) { note.trailGraphics.destroy(); note.trailGraphics = null; }
         note.gameObject?.destroy();
         note.glowObject?.destroy();
     }
@@ -716,6 +731,15 @@ export class GameScene extends Phaser.Scene {
             note._processing = false;
             note.hit = false;
             this.showJudgement('HIT!', '#44ffaa');
+
+            // Auto-miss if second hit doesn't land within the window
+            this.time.delayedCall(MISS_WINDOW_MS * 1.5, () => {
+                if (!note.hit && !note.missed) {
+                    note.frozen = false;
+                    this.missNote(note);
+                }
+            });
+
             if (note.bubbleObject) {
                 this.tweens.add({
                     targets: note.bubbleObject,
@@ -743,6 +767,7 @@ export class GameScene extends Phaser.Scene {
             this.burstNote(note, isPerfect);
             note.glowObject?.destroy();
             note.bubbleObject?.destroy();
+            if (note.trailGraphics) { note.trailGraphics.destroy(); note.trailGraphics = null; }
             this.time.delayedCall(120, () => note.gameObject?.destroy());
         }
     }
@@ -765,6 +790,7 @@ export class GameScene extends Phaser.Scene {
         note.glowObject?.destroy();
         note.bubbleObject?.destroy();
         if (note.tailGraphics) note.tailGraphics.destroy();
+        if (note.trailGraphics) { note.trailGraphics.destroy(); note.trailGraphics = null; }
     }
 
 
@@ -925,6 +951,75 @@ export class GameScene extends Phaser.Scene {
         this.time.delayedCall(500, () => emitter.destroy());
     }
 
+    shutdown() {
+        this.stopMV();
+        clearInterval(this.mvSyncInterval);
+    }
+
+    setupMV() {
+        const mvPath = this.mvPath;
+        if (!mvPath) return;
+
+        // Create video element behind canvas
+        this.mvVideo = document.createElement('video');
+        this.mvVideo.src = mvPath;
+        this.mvVideo.muted = true;
+        this.mvVideo.loop = true;
+        this.mvVideo.playsInline = true;
+        this.mvVideo.style.cssText = `
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        `;
+        document.body.appendChild(this.mvVideo);
+
+        // Dark overlay so notes stay readable
+        this.mvOverlay = this.add.rectangle(
+            this.cx, this.cy,
+            this.scale.width, this.scale.height,
+            0x000000, 0.55
+        ).setDepth(-1);
+
+        // Sync video to audio on canplay
+        this.mvVideo.addEventListener('canplay', () => {
+            this.mvReady = true;
+        });
+        this.mvVideo.load();
+    }
+
+    startMV() {
+        if (!this.mvVideo || !this.mvReady) return;
+        this.mvVideo.play().then(() => {
+            this.mvVideo.style.opacity = '1';
+        }).catch(e => console.warn('MV play failed:', e));
+        this.mvSyncInterval = setInterval(() => this.syncMV(), 3000);
+    }
+
+    syncMV() {
+        if (!this.mvVideo || !this.audioContext) return;
+        const gameTime = this.getCurrentTimeMs() / 1000;
+        const diff = Math.abs(this.mvVideo.currentTime - (gameTime % this.mvVideo.duration));
+        if (diff > 0.3) {
+            this.mvVideo.currentTime = gameTime % this.mvVideo.duration;
+        }
+    }
+
+    stopMV() {
+        if (!this.mvVideo) return;
+        this.mvVideo.style.opacity = '0';
+        clearInterval(this.mvSyncInterval);
+        setTimeout(() => {
+            this.mvVideo?.pause();
+            this.mvVideo?.remove();
+            this.mvVideo = null;
+        }, 800);
+    }
+
     triggerCinematic(isPerfect) {
         if (isPerfect) {
             this.triggerPerfectCinematic();
@@ -951,11 +1046,14 @@ export class GameScene extends Phaser.Scene {
                     this.cinematicActive = false;
         this.isPaused = false;
         this.pauseStartTime = null;
+        this.mvPath = null;
+        this.mvVideo = null;
+        this.mvReady = false;
+        this.mvSyncInterval = null;
                 });
             });
         });
 
-        this.flashTitleCard('PERFECT', '#ffd700');
     }
 
     triggerGoodCinematic() {
@@ -964,7 +1062,6 @@ export class GameScene extends Phaser.Scene {
             this.cameras.main.shake(60, 0.004);
             this.cameras.main.zoomTo(1.0, 150, 'Sine.easeOut');
         });
-        this.flashTitleCard('GOOD', '#4488ff');
     }
 
     triggerWhoopsSwing() {
@@ -1004,7 +1101,8 @@ export class GameScene extends Phaser.Scene {
                 note.gameObject?.destroy();
                 note.glowObject?.destroy();
                 note.bubbleObject?.destroy();
-                if (note.tailGraphics) note.tailGraphics.destroy();
+                if (note.tailGraphics)  note.tailGraphics.destroy();
+                if (note.trailGraphics) { note.trailGraphics.destroy(); note.trailGraphics = null; }
             }
         });
     }
@@ -1048,6 +1146,32 @@ export class GameScene extends Phaser.Scene {
             yoyo: true,
             ease: 'Sine.easeOut',
             onComplete: () => vignette.destroy()
+        });
+    }
+
+    endSong() {
+        this.audioContext?.suspend();
+        const totalNotes = this.notes.length || 1;
+        const totalHits = this.perfectCount + this.goodCount;
+        const accuracy = Math.round((totalHits / totalNotes) * 100);
+        const score = this.perfectCount * 300 + this.goodCount * 100;
+
+        this.time.delayedCall(800, () => {
+            this.cameras.main.fadeOut(700, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.audioContext?.close();
+                this.scene.start('EndScene', {
+                    songTitle: this.songTitle,
+                    difficulty: this.difficulty,
+                    perfectCount: this.perfectCount,
+                    goodCount: this.goodCount,
+                    missCount: this.missCount,
+                    score,
+                    tuningPct: this.tuningPct,
+                    accuracy,
+                    totalNotes,
+                });
+            });
         });
     }
 

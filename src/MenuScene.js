@@ -408,7 +408,7 @@ export class MenuScene extends Phaser.Scene {
         // Create hidden file input
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'audio/mpeg,audio/mp3,.mp3';
+        input.accept = 'audio/mpeg,audio/mp3,.mp3,audio/flac,.flac,audio/x-flac';
         input.style.display = 'none';
         document.body.appendChild(input);
 
@@ -416,24 +416,47 @@ export class MenuScene extends Phaser.Scene {
             const file = e.target.files[0];
             if (!file) return;
 
-            const bpmStr = window.prompt(`BPM for "${file.name}"? (check tunebat.com)`);
-            const bpm = parseFloat(bpmStr);
-            if (!bpm || isNaN(bpm)) {
-                this.importStatus.setText('cancelled or invalid BPM').setColor('#ff3078');
-                return;
-            }
-
-            this.importStatus.setText('analyzing audio...').setColor('#ffdd00');
+            this.importStatus.setText('reading metadata...').setColor('#ffdd00');
 
             try {
                 const { autochartFromFile } = await import('./Autochart.js');
                 const { saveChart, saveSong, saveAudio } = await import('./DB.js');
+                const { parseBlob } = await import('music-metadata-browser');
                 const difficulties = ['EZ', 'MEDIUM', 'HARD'];
                 const charts = {};
-                const songName = file.name.replace(/\.[^/.]+$/, '');
+
+                let songTitle = file.name.replace(/\.[^/.]+$/, '');
+                let artist = 'imported';
+                let detectedBpm = null;
+
+                try {
+                    const meta = await parseBlob(file);
+                    if (meta.common.title) songTitle = meta.common.title;
+                    if (meta.common.artist) artist = meta.common.artist;
+                    if (meta.common.bpm) detectedBpm = Math.round(meta.common.bpm);
+                } catch (metaErr) {
+                    console.warn('Could not read metadata:', metaErr);
+                }
+
+                // Use detected BPM or prompt
+                let bpmFinal = detectedBpm;
+                if (!bpmFinal) {
+                    const bpmStr = window.prompt(`BPM for "${songTitle}"? (check tunebat.com)`);
+                    bpmFinal = parseFloat(bpmStr);
+                } else {
+                    const confirm = window.prompt(`Detected BPM: ${bpmFinal} for "${songTitle}". Press OK to use or enter a different BPM.`, detectedBpm);
+                    if (confirm && !isNaN(parseFloat(confirm))) bpmFinal = parseFloat(confirm);
+                }
+
+                if (!bpmFinal || isNaN(bpmFinal)) {
+                    this.importStatus.setText('cancelled').setColor('#ff3078');
+                    return;
+                }
+
+                const songName = songTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
 
                 for (const diff of difficulties) {
-                    const chart = await autochartFromFile(file, bpm, diff, (p) => {
+                    const chart = await autochartFromFile(file, bpmFinal, diff, (p) => {
                         const pct = typeof p === 'number' ? ` ${Math.round(p * 100)}%` : '';
                         this.importStatus.setText(`charting ${diff}...${pct}`).setColor('#ffdd00');
                     });
@@ -448,8 +471,8 @@ export class MenuScene extends Phaser.Scene {
 
                 const song = {
                     id: songName,
-                    title: songName.replace(/_/g, ' '),
-                    artist: 'imported',
+                    title: songTitle,
+                    artist,
                     audio: `idb-audio:${songName}`,
                     charts,
                     label_color: '#4488ff',

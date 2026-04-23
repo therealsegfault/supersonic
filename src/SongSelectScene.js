@@ -381,6 +381,7 @@ export class SongSelectScene extends Phaser.Scene {
                             songTitle: song.title,
                             artist: song.artist,
                             difficulty: diff,
+                            mvPath: song.mv || null,
                         });
                     });
                 });
