@@ -3,7 +3,7 @@ import * as Phaser from 'phaser';
 // ── Timing constants (from SWING) ──
 const PERFECT_WINDOW_MS = 80;
 const MAX_HIT_WINDOW_MS = 250;
-const MISS_WINDOW_MS = 400;
+const MISS_WINDOW_MS = 600;
 const APPROACH_TIME_MS = 1200;
 
 // ── Note types ──
@@ -23,7 +23,9 @@ const NOTE_COLORS = {
 class Note {
     constructor(hitTimeMs, type, direction) {
         this.hitTimeMs = hitTimeMs;
-        this.spawnTimeMs = hitTimeMs - APPROACH_TIME_MS;
+        const approachMs = type === 'pyramid' ? APPROACH_TIME_MS * 0.7 : APPROACH_TIME_MS;
+        this.spawnTimeMs = hitTimeMs - approachMs;
+        this.approachMs = approachMs;
         this.type = type;
         this.direction = direction;
         this.hit = false;
@@ -33,6 +35,7 @@ class Note {
         this.holdStartMs = -1;
         this.holdKey = null;
         this.hitCount = 0;
+        this.frozen = false;
     }
 }
 
@@ -57,6 +60,9 @@ export class GameScene extends Phaser.Scene {
         this.failTimer = null;
         this.failWarning = false;
         this.tuningPct = 100;
+        this.cinematicActive = false;
+        this.isPaused = false;
+        this.pauseStartTime = null;
         this.heldNotes = new Map();   // key -> note being held
         this.activeMultihits = new Map(); // note -> hit count
     }
@@ -188,10 +194,11 @@ export class GameScene extends Phaser.Scene {
         this.loadChart(this.chartPath);
 
         // Input
-        this.input.keyboard.addCapture(['D', 'F', 'J', 'K']);
+        this.input.keyboard.addCapture(['D', 'F', 'J', 'K', 'ESC']);
         this.input.keyboard.on('keydown-D', () => this.handleInput(NOTE_TYPE.SPHERE, 'D'));
         this.input.keyboard.on('keydown-F', () => this.handleInput(NOTE_TYPE.CUBE, 'F'));
         this.input.keyboard.on('keydown-J', () => this.handleInput(NOTE_TYPE.PYRAMID, 'J'));
+        this.input.keyboard.on('keydown-ESC', () => this.togglePause());
         this.input.keyboard.on('keyup-D', () => this.handleRelease('D'));
         this.input.keyboard.on('keyup-F', () => this.handleRelease('F'));
         this.input.keyboard.on('keyup-J', () => this.handleRelease('J'));
@@ -218,8 +225,8 @@ export class GameScene extends Phaser.Scene {
         this.audioSource = this.audioContext.createBufferSource();
         this.audioSource.buffer = this.audioBuffer;
         this.audioSource.connect(this.gainNode);
+        this.audioStartContextTime = this.audioContext.currentTime;
         this.audioSource.start(0);
-        // Set startTime now that audio is actually playing
         this.startTime = this.time.now;
     }
 
@@ -332,8 +339,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     getCurrentTimeMs() {
-        if (!this.startTime) return -APPROACH_TIME_MS;
-        return this.time.now - this.startTime;
+        if (!this.audioContext || !this.audioStartContextTime) return -APPROACH_TIME_MS;
+        return (this.audioContext.currentTime - this.audioStartContextTime) * 1000;
     }
 
     // ── Bezier curve helpers ──
@@ -371,7 +378,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     update() {
-        if (this.isFailing) return;
+        if (this.isFailing || this.isPaused) return;
 
         const now = this.getCurrentTimeMs();
 
@@ -395,7 +402,7 @@ export class GameScene extends Phaser.Scene {
             }
 
             if (note.gameObject && !note.frozen) {
-                const progress = Math.min(1, (now - note.spawnTimeMs) / APPROACH_TIME_MS);
+                const progress = Math.min(1, (now - note.spawnTimeMs) / (note.approachMs || APPROACH_TIME_MS));
                 const spawn = this.getSpawnPosition(note.direction);
                 const curve = note.curve || (note.curve = this.getNoteCurve(spawn, note.type));
 
@@ -584,18 +591,41 @@ export class GameScene extends Phaser.Scene {
         const glow = note.glowObject;
         const bubble = note.bubbleObject;
 
+        // Drift outward from center then fade
+        const angle = Phaser.Math.Angle.Between(
+            this.cx, this.cy,
+            obj.x || this.cx + 50,
+            obj.y || this.cy + 50
+        );
+        const driftX = obj.x + Math.cos(angle) * 120;
+        const driftY = obj.y + Math.sin(angle) * 80;
+
+        const targets = [obj, glow, bubble].filter(Boolean);
+
         this.tweens.add({
-            targets: [obj, glow, bubble].filter(Boolean),
-            y: this.scale.height + 100,
-            angle: Phaser.Math.Between(-180, 180),
-            alpha: 0,
-            duration: 600,
-            ease: 'Sine.easeIn',
+            targets,
+            x: driftX,
+            y: driftY,
+            angle: Phaser.Math.Between(-90, 90),
+            alpha: 0.3,
+            duration: 300,
+            ease: 'Sine.easeOut',
             onComplete: () => {
-                obj?.destroy();
-                glow?.destroy();
-                bubble?.destroy();
-                if (note.tailGraphics) note.tailGraphics.destroy();
+                // Orbit loosely then fully fade
+                this.tweens.add({
+                    targets,
+                    x: driftX + Phaser.Math.Between(-40, 40),
+                    y: driftY + 40,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Sine.easeIn',
+                    onComplete: () => {
+                        obj?.destroy();
+                        glow?.destroy();
+                        bubble?.destroy();
+                        if (note.tailGraphics) note.tailGraphics.destroy();
+                    }
+                });
             }
         });
     }
@@ -671,12 +701,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     handleMultihit(note, offset) {
+        // Debounce — ignore hits within 80ms of last hit on this note
+        const nowMs = this.getCurrentTimeMs();
+        if (note._lastHitMs !== undefined && nowMs - note._lastHitMs < 80) return;
+        note._lastHitMs = nowMs;
+
+
         const count = (this.activeMultihits.get(note) || 0) + 1;
         this.activeMultihits.set(note, count);
 
         if (count === 1) {
             note.gameObject?.setFillStyle(0xffaa00);
             note.frozen = true;
+            note._processing = false;
             note.hit = false;
             this.showJudgement('HIT!', '#44ffaa');
             if (note.bubbleObject) {
@@ -694,6 +731,7 @@ export class GameScene extends Phaser.Scene {
         } else if (count >= 2) {
             this.activeMultihits.delete(note);
             note.hit = true;
+            note.missed = true; // fully exclude from update loop
             const isPerfect = offset <= PERFECT_WINDOW_MS;
             isPerfect ? this.perfectCount++ : this.goodCount++;
             this.combo++;
@@ -888,26 +926,175 @@ export class GameScene extends Phaser.Scene {
     }
 
     triggerCinematic(isPerfect) {
-        this.cameras.main.zoomTo(
-            isPerfect ? 1.08 : 1.05, 60, 'Linear', false,
-            (cam, progress) => {
-                if (progress === 1) {
-                    this.time.delayedCall(40, () => {
-                        this.cameras.main.shake(80, isPerfect ? 0.006 : 0.004);
-                        this.cameras.main.zoomTo(1.0, 100);
-                    });
-                }
-            }
-        );
+        if (isPerfect) {
+            this.triggerPerfectCinematic();
+        } else {
+            this.triggerGoodCinematic();
+        }
+    }
+
+    triggerPerfectCinematic() {
+        if (this.cinematicActive) return;
+        this.cinematicActive = true;
+
+        // Snap zoom — taut fabric feel
+        this.cameras.main.zoomTo(1.06, 60, 'Linear', false, (cam, progress) => {
+            if (progress !== 1) return;
+            // Hold briefly then shake
+            this.time.delayedCall(40, () => {
+                this.cameras.main.shake(80, 0.006);
+                // Auto resolve notes in a tight window only
+                this.autoResolveDuring(400);
+                // Zoom back out smoothly
+                this.cameras.main.zoomTo(1.0, 250, 'Sine.easeOut');
+                this.time.delayedCall(300, () => {
+                    this.cinematicActive = false;
+        this.isPaused = false;
+        this.pauseStartTime = null;
+                });
+            });
+        });
+
+        this.flashTitleCard('PERFECT', '#ffd700');
+    }
+
+    triggerGoodCinematic() {
+        this.cameras.main.zoomTo(1.05, 60, 'Linear', false, (cam, progress) => {
+            if (progress !== 1) return;
+            this.cameras.main.shake(60, 0.004);
+            this.cameras.main.zoomTo(1.0, 150, 'Sine.easeOut');
+        });
+        this.flashTitleCard('GOOD', '#4488ff');
     }
 
     triggerWhoopsSwing() {
-        this.cameras.main.zoomTo(1.03, 80, 'Linear', false, (cam, progress) => {
-            if (progress === 1) {
-                this.cameras.main.zoomTo(0.98, 120, 'Linear', false, (cam2, p2) => {
-                    if (p2 === 1) this.cameras.main.zoomTo(1.0, 80);
+        // Camera dips downward
+        const cam = this.cameras.main;
+        const origY = cam.scrollY;
+        this.tweens.add({
+            targets: cam,
+            scrollY: origY + 30,
+            duration: 80,
+            ease: 'Sine.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: cam,
+                    scrollY: origY,
+                    duration: 200,
+                    ease: 'Sine.easeOut',
                 });
             }
         });
+        this.flashVignette();
+    }
+
+    autoResolveDuring(durationMs) {
+        const now = this.getCurrentTimeMs();
+        const windowEnd = now + durationMs;
+        this.notes.forEach(note => {
+            if (note.hit || note.missed || note.frozen) return;
+            if (note.hitTimeMs >= now && note.hitTimeMs <= windowEnd) {
+                note.hit = true;
+                this.goodCount++;
+                this.combo++;
+                this.updateComboDisplay();
+                this.updateScoreDisplay();
+                this.updateTuning();
+                this.burstNote(note, false);
+                note.gameObject?.destroy();
+                note.glowObject?.destroy();
+                note.bubbleObject?.destroy();
+                if (note.tailGraphics) note.tailGraphics.destroy();
+            }
+        });
+    }
+
+    flashTitleCard(text, color) {
+        const card = this.add.text(this.cx, this.cy - 80, text, {
+            fontFamily: 'SuperBubble, sans-serif',
+            fontSize: '52px',
+            color,
+            shadow: { offsetX: 0, offsetY: 0, color, blur: 20, fill: true }
+        }).setOrigin(0.5).setDepth(15).setAlpha(0);
+
+        this.tweens.add({
+            targets: card,
+            alpha: { from: 0, to: 1 },
+            scaleX: { from: 1.3, to: 1 },
+            scaleY: { from: 1.3, to: 1 },
+            duration: 80,
+            ease: 'Sine.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: card,
+                    alpha: 0,
+                    duration: 300,
+                    delay: 200,
+                    onComplete: () => card.destroy()
+                });
+            }
+        });
+    }
+
+    flashVignette() {
+        const W = this.scale.width;
+        const H = this.scale.height;
+        const vignette = this.add.rectangle(W/2, H/2, W, H, 0xff0000, 0)
+            .setDepth(18);
+        this.tweens.add({
+            targets: vignette,
+            alpha: { from: 0, to: 0.25 },
+            duration: 80,
+            yoyo: true,
+            ease: 'Sine.easeOut',
+            onComplete: () => vignette.destroy()
+        });
+    }
+
+    togglePause() {
+        this.isPaused = !this.isPaused;
+
+        if (this.isPaused) {
+            // Pause audio
+            if (this.audioContext) this.audioContext.suspend();
+            this.pauseStartTime = this.audioContext.currentTime;
+
+            // Pause tweens
+            this.tweens.pauseAll();
+
+            // Show pause overlay
+            const W = this.scale.width;
+            const H = this.scale.height;
+            this.pauseBg = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0.6).setDepth(25);
+            this.pauseText = this.add.text(W/2, H/2 - 20, 'PAUSED', {
+                fontFamily: 'Fira Sans, sans-serif',
+                fontSize: '48px',
+                fontStyle: 'bold',
+                color: '#ffffff',
+            }).setOrigin(0.5).setDepth(26);
+            this.pauseHint = this.add.text(W/2, H/2 + 30, 'press ESC to resume', {
+                fontFamily: 'Fira Sans, sans-serif',
+                fontSize: '16px',
+                color: '#666666',
+                fontStyle: 'italic',
+            }).setOrigin(0.5).setDepth(26);
+        } else {
+            // Resume audio
+            if (this.audioContext) this.audioContext.resume();
+
+            // Adjust startTime for the pause duration
+            if (this.pauseStartTime !== undefined) {
+                const pauseDuration = this.audioContext.currentTime - this.pauseStartTime;
+                this.audioStartContextTime += pauseDuration;
+            }
+
+            // Resume tweens
+            this.tweens.resumeAll();
+
+            // Remove pause overlay
+            this.pauseBg?.destroy();
+            this.pauseText?.destroy();
+            this.pauseHint?.destroy();
+        }
     }
 }
