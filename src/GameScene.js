@@ -3,7 +3,7 @@ import * as Phaser from 'phaser';
 // ── Timing constants (from SWING) ──
 const PERFECT_WINDOW_MS = 80;
 const MAX_HIT_WINDOW_MS = 250;
-const MISS_WINDOW_MS = 180;
+const MISS_WINDOW_MS = 400;
 const APPROACH_TIME_MS = 1200;
 
 // ── Note types ──
@@ -73,9 +73,8 @@ export class GameScene extends Phaser.Scene {
             this.audioPath = '/src/assets/audio/tellmeyouknow.mp3';
         }
 
+        this.startTime = null; // set when audio actually starts
         this.loadAudio().then(() => this.startAudio());
-
-        this.startTime = this.time.now;
         this.cx = this.scale.width / 2;
         this.cy = this.scale.height / 2;
 
@@ -220,6 +219,8 @@ export class GameScene extends Phaser.Scene {
         this.audioSource.buffer = this.audioBuffer;
         this.audioSource.connect(this.gainNode);
         this.audioSource.start(0);
+        // Set startTime now that audio is actually playing
+        this.startTime = this.time.now;
     }
 
     triggerTapeSlowdown() {
@@ -331,6 +332,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     getCurrentTimeMs() {
+        if (!this.startTime) return -APPROACH_TIME_MS;
         return this.time.now - this.startTime;
     }
 
@@ -386,7 +388,7 @@ export class GameScene extends Phaser.Scene {
 
         // Notes
         this.notes.forEach(note => {
-            if (note.hit || note.missed) return;
+            if (note.hit || note.missed || note.frozen) return;
 
             if (now >= note.spawnTimeMs && !note.gameObject) {
                 this.spawnNoteVisual(note);
@@ -424,7 +426,8 @@ export class GameScene extends Phaser.Scene {
                     note.tailGraphics.beginPath();
 
                     // Tail shrinks from back as hold progresses
-                    const maxTailLength = Math.min(0.4, (duration / 1000) * (1 / APPROACH_TIME_MS) * 1000);
+                    // maxTailLength in bezier progress units (0-1)
+                    const maxTailLength = Math.min(0.5, duration / (APPROACH_TIME_MS * 2));
                     const tailLength = maxTailLength * (1 - holdProgress);
                     const tailStart = Math.max(0, progress - tailLength);
                     const steps = 12;
@@ -455,6 +458,12 @@ export class GameScene extends Phaser.Scene {
             if (!note.frozen && now > APPROACH_TIME_MS && now - note.hitTimeMs > MISS_WINDOW_MS) {
                 this.missNote(note);
             }
+        });
+
+        // Keep frozen pyramid visuals alive
+        this.notes.forEach(note => {
+            if (!note.frozen || note.missed) return;
+            // Just keep it visible, movement handled by tween
         });
 
         // Fade judgement
@@ -667,6 +676,8 @@ export class GameScene extends Phaser.Scene {
 
         if (count === 1) {
             note.gameObject?.setFillStyle(0xffaa00);
+            note.frozen = true;
+            note.hit = false;
             this.showJudgement('HIT!', '#44ffaa');
             if (note.bubbleObject) {
                 this.tweens.add({
