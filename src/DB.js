@@ -119,7 +119,7 @@ export async function deleteSong(id) {
         const tx = db.transaction(['songs', 'charts'], 'readwrite');
         tx.objectStore('songs').delete(id);
         // Delete all difficulty charts for this song
-        ['EZ', 'MEDIUM', 'HARD', 'EXTREME', 'EXTRA_EXTREME', 'TUTORIAL', '300BPM'].forEach(diff => {
+        ['EZ', 'NORMAL', 'HARD', 'EXTREME', 'EXTRA_EXTREME', 'TUTORIAL', '300BPM'].forEach(diff => {
             tx.objectStore('charts').delete(`${id}_${diff}`);
         });
         tx.oncomplete = () => resolve();

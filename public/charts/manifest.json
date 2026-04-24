@@ -7,7 +7,7 @@
       "audio": "/src/assets/audio/tellmeyouknow.mp3",
       "charts": {
         "EZ": "/src/assets/charts/tellmeyouknow_EZ.json",
-        "NORMAL": "/src/assets/charts/tellmeyouknow_MEDIUM.json"
+        "MEDIUM": "/src/assets/charts/tellmeyouknow_MEDIUM.json"
       },
       "label_color": "#d4a843",
       "label_text_color": "#3a1a00"

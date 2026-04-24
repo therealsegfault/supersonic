@@ -20,8 +20,11 @@ export class SongSelectScene extends Phaser.Scene {
         this.cy = H / 2;
 
         // Load manifest
-        const res = await fetch('/src/assets/charts/manifest.json');
-        this.manifest = await res.json();
+        const res = await fetch('/charts/manifest.json');
+        if (!res.ok) throw new Error(`Manifest fetch failed: ${res.status} ${res.url}`);
+        const text = await res.text();
+        console.log('manifest raw:', text.slice(0, 100));
+        this.manifest = JSON.parse(text);
         this.songs = [...this.manifest.songs];
 
         // Load imported songs from IndexedDB

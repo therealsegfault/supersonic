@@ -38,6 +38,10 @@ export class MenuScene extends Phaser.Scene {
         this.optionsOpen = false;
     }
 
+    preload() {
+        this.load.image('boombox', '/src/assets/sprites/boombox.png');
+    }
+
     create() {
         const W = this.scale.width;
         const H = this.scale.height;
@@ -64,44 +68,10 @@ export class MenuScene extends Phaser.Scene {
         const BX = cx - BW / 2;
         const BY = cy - BH / 2;
 
-        // Drop shadow
-        this.add.rectangle(cx + 8, cy + 10, BW, BH, 0x000000, 0.5).setOrigin(0.5);
-
-        // Main body — worn silver
-        const body = this.add.graphics();
-        body.fillStyle(0xc8c8c8);
-        body.fillRoundedRect(BX, BY, BW, BH, 18);
-
-        // Worn edge highlight top
-        body.fillStyle(0xe8e8e8);
-        body.fillRoundedRect(BX, BY, BW, 6, { tl: 18, tr: 18, bl: 0, br: 0 });
-
-        // Worn shadow bottom
-        body.fillStyle(0x909090);
-        body.fillRoundedRect(BX, BY + BH - 6, BW, 6, { tl: 0, tr: 0, bl: 18, br: 18 });
-
-        // Yellowed plastic panel center
-        body.fillStyle(0xd4c89a, 0.3);
-        body.fillRoundedRect(BX + BW * 0.28, BY + 12, BW * 0.44, BH - 24, 10);
-
-        // Screw heads — four corners
-        const screwPositions = [
-            [BX + 22, BY + 22], [BX + BW - 22, BY + 22],
-            [BX + 22, BY + BH - 22], [BX + BW - 22, BY + BH - 22]
-        ];
-        screwPositions.forEach(([sx, sy]) => {
-            body.fillStyle(0x888888);
-            body.fillCircle(sx, sy, 5);
-            body.fillStyle(0x666666);
-            body.fillRect(sx - 3, sy - 0.5, 6, 1);
-            body.fillRect(sx - 0.5, sy - 3, 1, 6);
-        });
-
-        // ── Left speaker grille ──
-        this.drawSpeakerGrille(BX + 14, BY + 30, BW * 0.22, BH - 60);
-
-        // ── Right speaker grille ──
-        this.drawSpeakerGrille(BX + BW - 14 - BW * 0.22, BY + 30, BW * 0.22, BH - 60);
+        // Boombox image
+        const boomboxImg = this.add.image(cx, cy, 'boombox');
+        const boomboxSize = Math.max(BW, BH);
+        boomboxImg.setDisplaySize(boomboxSize, boomboxSize);
 
         // ── Center panel ──
         const CPX = BX + BW * 0.28 + 8;
@@ -225,11 +195,12 @@ export class MenuScene extends Phaser.Scene {
         this.optBtn = this.createButton(CPX + CPW * 0.74, BTY + BTH * 0.62, CPW * 0.18, BTH * 0.38, 'OPT', 0x444444, () => this.toggleOptions());
 
         // ── Keyboard input ──
-        this.input.keyboard.addCapture(['LEFT', 'RIGHT', 'ENTER', 'SPACE', 'O']);
+        this.input.keyboard.addCapture(['LEFT', 'RIGHT', 'ENTER', 'SPACE', 'O', 'ESCAPE']);
         this.input.keyboard.on('keydown-LEFT',  () => this.navigate(-1));
         this.input.keyboard.on('keydown-RIGHT', () => this.navigate(1));
         this.input.keyboard.on('keydown-ENTER', () => this.startGame());
         this.input.keyboard.on('keydown-SPACE', () => this.startGame());
+        this.input.keyboard.on('keydown-ESCAPE', () => { if (this.optionsOpen) this.toggleOptions(); });
 
         // ── Version tag ──
         this.add.text(W - 16, H - 16, 'SUPERSONIC  proto v0.0.1', {
@@ -250,29 +221,6 @@ export class MenuScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
-    }
-
-    drawSpeakerGrille(x, y, w, h) {
-        const g = this.add.graphics();
-        const cols = Math.floor(w / 10);
-        const rows = Math.floor(h / 10);
-        const startX = x + (w - cols * 10) / 2;
-        const startY = y + (h - rows * 10) / 2;
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const px = startX + c * 10 + 2;
-                const py = startY + r * 10 + 2;
-                g.fillStyle(0x888888, 0.6);
-                g.fillCircle(px, py, 2.5);
-                g.fillStyle(0x555555, 0.4);
-                g.fillCircle(px + 0.5, py + 0.5, 2.5);
-            }
-        }
-
-        // Fabric overlay
-        g.fillStyle(0x777777, 0.08);
-        g.fillRect(x, y, w, h);
     }
 
     drawReels() {
@@ -490,7 +438,7 @@ export class MenuScene extends Phaser.Scene {
                 const { saveChart, saveSong, saveAudio, saveVideo } = await import('./DB.js');
 
                 const songName = songTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-                const difficulties = ['EZ', 'MEDIUM', 'HARD'];
+                const difficulties = ['EZ', 'NORMAL', 'HARD'];
                 const charts = {};
 
                 this.importStatus.setText('extracting audio...').setColor('#ffdd00');
@@ -562,7 +510,7 @@ export class MenuScene extends Phaser.Scene {
                 const { autochartFromFile } = await import('./Autochart.js');
                 const { saveChart, saveSong, saveAudio } = await import('./DB.js');
                 const { parseBlob } = await import('music-metadata-browser');
-                const difficulties = ['EZ', 'MEDIUM', 'HARD'];
+                const difficulties = ['EZ', 'NORMAL', 'HARD'];
                 const charts = {};
 
                 let songTitle = file.name.replace(/\.[^/.]+$/, '');

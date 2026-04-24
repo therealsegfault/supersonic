@@ -13,7 +13,7 @@ const DIRECTIONS = ['left', 'right', 'top', 'bottom', 'topleft', 'topright', 'bo
 const DIFFICULTY_CONFIG = {
     TUTORIAL:      { minSepMs: 600,  maxChord: 1, threshold: 0.15 },
     EZ:            { minSepMs: 1200, maxChord: 1, threshold: 0.20 },
-    MEDIUM:        { minSepMs: 800,  maxChord: 1, threshold: 0.15 },
+    NORMAL:        { minSepMs: 500,  maxChord: 1, threshold: 0.15 },
     HARD:          { minSepMs: 500,  maxChord: 2, threshold: 0.10 },
     EXTREME:       { minSepMs: 300,  maxChord: 2, threshold: 0.07 },
     EXTRA_EXTREME: { minSepMs: 150,  maxChord: 3, threshold: 0.04 },
@@ -96,7 +96,7 @@ function detectPitches(mag, sampleRate, windowSize, threshold = 0.008) {
 }
 
 function analyze(samples, sampleRate, bpm, difficulty) {
-    const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.MEDIUM;
+    const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.NORMAL;
     const windowSize = 2048;
     const hopSize = 1024;
     const hann = hannWindow(windowSize);
@@ -171,7 +171,7 @@ function analyze(samples, sampleRate, bpm, difficulty) {
 }
 
 function buildNotes(sustainedEvents, transientEvents, bpm, difficulty, durationMs) {
-    const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.MEDIUM;
+    const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.NORMAL;
     const msPerBeat = 60000 / bpm;
     const msPerSixteenth = msPerBeat / 4;
 

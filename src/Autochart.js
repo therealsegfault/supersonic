@@ -1,6 +1,6 @@
 import { Note } from 'tonal';
 
-export async function autochartFromFile(file, bpm, difficulty = 'MEDIUM', onProgress) {
+export async function autochartFromFile(file, bpm, difficulty = 'NORMAL', onProgress) {
     return new Promise(async (resolve, reject) => {
         // Decode audio on main thread (fast)
         const arrayBuffer = await file.arrayBuffer();

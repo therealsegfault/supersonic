@@ -2,9 +2,9 @@ import * as Phaser from 'phaser';
 
 // ── Timing constants (from SWING) ──
 const PERFECT_WINDOW_MS = 80;
-const MAX_HIT_WINDOW_MS = 250;
-const MISS_WINDOW_MS = 600;
-const APPROACH_TIME_MS = 1200;
+const MAX_HIT_WINDOW_MS = 165;
+const MISS_WINDOW_MS = 400;
+const APPROACH_TIME_MS = 900;
 
 // ── Note types ──
 const NOTE_TYPE = {
@@ -51,7 +51,7 @@ export class GameScene extends Phaser.Scene {
         this.missCount = 0;
         this.songDurationMs = 14000;
         this.songTitle = 'Tell Me You Know';
-        this.difficulty = 'MEDIUM';
+        this.difficulty = 'NORMAL';
         this.audioContext = null;
         this.audioSource = null;
         this.audioBuffer = null;
@@ -330,6 +330,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     async loadChart(chartPath) {
+        console.log('loadChart:', chartPath);
         let chart;
         if (chartPath.startsWith('idb:')) {
             const { loadChart } = await import('./DB.js');
@@ -386,8 +387,36 @@ export class GameScene extends Phaser.Scene {
         };
     }
 
+    drawXMBWaves() {
+        const g = this.xmbGraphics;
+        const W = this.scale.width;
+        const H = this.scale.height;
+        const t = this.time.now / 1000;
+        const STEPS = 100;
+
+        g.clear();
+        for (const wave of this.xmbWaves) {
+            const baseY = wave.yFrac * H;
+            g.lineStyle(wave.lw, wave.color, wave.alpha);
+            g.beginPath();
+            for (let i = 0; i <= STEPS; i++) {
+                const x = (i / STEPS) * W;
+                // Two sine harmonics layered: primary + a quieter second at 2× freq
+                const phase = (x / W) * Math.PI * 2 * wave.freq + t * wave.speed * Math.PI * 2;
+                const y = baseY
+                    + Math.sin(phase) * wave.amp
+                    + Math.sin(phase * 2 + 1.1) * (wave.amp * 0.22);
+                if (i === 0) g.moveTo(x, y);
+                else g.lineTo(x, y);
+            }
+            g.strokePath();
+        }
+    }
+
     update() {
         if (this.isFailing || this.isPaused) return;
+
+        if (this.xmbGraphics) this.drawXMBWaves();
 
         const now = this.getCurrentTimeMs();
 
@@ -675,7 +704,27 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-        if (!candidate) return;
+        if (!candidate) {
+            // Too-early hit: find the nearest upcoming note of this type within the miss window
+            let earlyNote = null;
+            let earlyDist = Infinity;
+            this.notes.forEach(note => {
+                if (note.missed || note.hit) return;
+                if (note.frozen) return;
+                if (note.type !== type) return;
+                const dist = note.hitTimeMs - now; // positive = future
+                if (dist > 0 && dist <= MISS_WINDOW_MS && dist < earlyDist) {
+                    earlyNote = note;
+                    earlyDist = dist;
+                }
+            });
+            if (earlyNote) {
+                earlyNote.missed = true;
+                this.fallNote(earlyNote);
+                this.registerMiss();
+            }
+            return;
+        }
 
         if (candidate.type === NOTE_TYPE.CUBE) {
             this.startHold(candidate, bestOffset, key);
@@ -744,7 +793,7 @@ export class GameScene extends Phaser.Scene {
             note.frozen = true;
             note._processing = false;
             note.hit = false;
-            this.showJudgement('HIT!', '#44ffaa');
+            this.showJudgement('SWING!', '#44ffaa');
 
             // Auto-miss if second hit doesn't land within the window
             this.time.delayedCall(MISS_WINDOW_MS * 1.5, () => {
@@ -977,6 +1026,8 @@ export class GameScene extends Phaser.Scene {
             this.setupMV();
         } else if (this.gifPath) {
             this.setupGIF();
+        } else if (this.chartPath && this.chartPath.startsWith('idb:')) {
+            this.setupXMBBackground();
         } else {
             this.setupComputedBG();
         }
@@ -1006,6 +1057,25 @@ export class GameScene extends Phaser.Scene {
             alpha: { start: 0.3, end: 0 },
         }).setDepth(-9);
         this.bgParticles = particles;
+    }
+
+    setupXMBBackground() {
+        this.add.rectangle(this.cx, this.cy, this.scale.width, this.scale.height, 0x000000, 1)
+            .setDepth(-10);
+
+        this.xmbGraphics = this.add.graphics().setDepth(-9);
+
+        // Six ribbons with varied vertical position, amplitude, frequency and drift speed.
+        // Colors sit in the game's blue-teal palette, kept very dim so they read as
+        // "ambient" rather than decorative.
+        this.xmbWaves = [
+            { yFrac: 0.15, amp: 52, freq: 1.3, speed: 0.19, color: 0x1a4a7a, alpha: 0.48, lw: 1.5 },
+            { yFrac: 0.30, amp: 38, freq: 1.8, speed: 0.13, color: 0x0e3055, alpha: 0.38, lw: 1.0 },
+            { yFrac: 0.46, amp: 62, freq: 1.05, speed: 0.23, color: 0x1b5c78, alpha: 0.52, lw: 2.0 },
+            { yFrac: 0.60, amp: 33, freq: 2.15, speed: 0.10, color: 0x142d48, alpha: 0.33, lw: 1.0 },
+            { yFrac: 0.74, amp: 48, freq: 1.65, speed: 0.17, color: 0x224060, alpha: 0.44, lw: 1.5 },
+            { yFrac: 0.88, amp: 42, freq: 1.25, speed: 0.20, color: 0x183558, alpha: 0.38, lw: 1.0 },
+        ];
     }
 
     setupMV() {
@@ -1252,12 +1322,16 @@ export class GameScene extends Phaser.Scene {
                 fontStyle: 'bold',
                 color: '#ffffff',
             }).setOrigin(0.5).setDepth(26);
-            this.pauseHint = this.add.text(W/2, H/2 + 30, 'press ESC to resume', {
+            this.pauseHint = this.add.text(W/2, H/2 + 30, 'ESC resume  ·  SPACE quit to menu', {
                 fontFamily: 'Fira Sans, sans-serif',
                 fontSize: '16px',
                 color: '#666666',
                 fontStyle: 'italic',
             }).setOrigin(0.5).setDepth(26);
+
+            this.pauseSpaceKey = this.input.keyboard.once('keydown-SPACE', () => {
+                if (this.isPaused) this.quitToMenu();
+            });
         } else {
             // Resume audio
             if (this.audioContext) this.audioContext.resume();
@@ -1278,6 +1352,21 @@ export class GameScene extends Phaser.Scene {
             this.pauseBg?.destroy();
             this.pauseText?.destroy();
             this.pauseHint?.destroy();
+
+            // Cancel space-to-quit listener
+            if (this.pauseSpaceKey) {
+                this.input.keyboard.removeListener('keydown-SPACE', this.pauseSpaceKey);
+                this.pauseSpaceKey = null;
+            }
         }
+    }
+
+    quitToMenu() {
+        if (this.audioContext) this.audioContext.suspend();
+        if (this.mvVideo) this.mvVideo.pause();
+        this.cameras.main.fadeOut(400, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('MenuScene');
+        });
     }
 }
