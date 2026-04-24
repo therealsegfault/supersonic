@@ -64,6 +64,7 @@ export class GameScene extends Phaser.Scene {
         this.isPaused = false;
         this.pauseStartTime = null;
         this.mvPath = null;
+        this.gifPath = null;
         this.mvVideo = null;
         this.mvReady = false;
         this.mvSyncInterval = null;
@@ -80,6 +81,7 @@ export class GameScene extends Phaser.Scene {
             this.songTitle = data.songTitle || 'Unknown';
             this.difficulty = data.difficulty || 'MEDIUM';
             this.mvPath = data.mvPath || null;
+            this.gifPath = data.gifPath || null;
         } else {
             this.chartPath = '/src/assets/charts/tellmeyouknow_MEDIUM.json';
             this.audioPath = '/src/assets/audio/tellmeyouknow.mp3';
@@ -87,9 +89,14 @@ export class GameScene extends Phaser.Scene {
 
         this.startTime = null; // set when audio actually starts
         this.loadAudio().then(() => this.startAudio());
-        this.setupMV();
+
+        // GameScene always runs on transparent canvas
+        // Background layer: MP4 > GIF > computed animation > black
+        this.game.canvas.style.backgroundColor = 'transparent';
+        this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
         this.cx = this.scale.width / 2;
         this.cy = this.scale.height / 2;
+        this.setupBackground();
 
         // ── Top bar ──
         const BAR_H = 72;
@@ -723,6 +730,13 @@ export class GameScene extends Phaser.Scene {
 
 
         const count = (this.activeMultihits.get(note) || 0) + 1;
+        // Second hit requires note near strike zone
+        if (count === 2 && note.gameObject) {
+            const dist = Phaser.Math.Distance.Between(
+                note.gameObject.x, note.gameObject.y, this.cx, this.cy
+            );
+            if (dist > 120) return;
+        }
         this.activeMultihits.set(note, count);
 
         if (count === 1) {
@@ -954,6 +968,44 @@ export class GameScene extends Phaser.Scene {
     shutdown() {
         this.stopMV();
         clearInterval(this.mvSyncInterval);
+        // Restore canvas background for menu scenes
+        this.game.canvas.style.backgroundColor = '#0a0a0a';
+    }
+
+    setupBackground() {
+        if (this.mvPath) {
+            this.setupMV();
+        } else if (this.gifPath) {
+            this.setupGIF();
+        } else {
+            this.setupComputedBG();
+        }
+    }
+
+    setupGIF() {
+        // Future: animated GIF as background
+        // For now fall through to computed
+        this.setupComputedBG();
+    }
+
+    setupComputedBG() {
+        // Fallback — subtle particle field reacting to note intensity
+        // Black base
+        this.add.rectangle(this.cx, this.cy, this.scale.width, this.scale.height, 0x000000, 1)
+            .setDepth(-10);
+
+        // Ambient particle field
+        const particles = this.add.particles(this.cx, this.cy, '__DEFAULT', {
+            speed: { min: 5, max: 20 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.15, end: 0 },
+            lifespan: { min: 2000, max: 4000 },
+            quantity: 1,
+            frequency: 80,
+            tint: [0x4488ff, 0xff44aa, 0x44ffaa, 0x888888],
+            alpha: { start: 0.3, end: 0 },
+        }).setDepth(-9);
+        this.bgParticles = particles;
     }
 
     setupMV() {
@@ -971,11 +1023,14 @@ export class GameScene extends Phaser.Scene {
             top: 0; left: 0;
             width: 100%; height: 100%;
             object-fit: cover;
-            z-index: 0;
+            z-index: -1;
             opacity: 0;
             transition: opacity 0.8s ease;
             pointer-events: none;
         `;
+        // Make Phaser canvas transparent so video shows through
+        const canvas = this.game.canvas;
+        canvas.style.background = 'transparent';
         document.body.appendChild(this.mvVideo);
 
         // Dark overlay so notes stay readable
@@ -1044,12 +1099,6 @@ export class GameScene extends Phaser.Scene {
                 this.cameras.main.zoomTo(1.0, 250, 'Sine.easeOut');
                 this.time.delayedCall(300, () => {
                     this.cinematicActive = false;
-        this.isPaused = false;
-        this.pauseStartTime = null;
-        this.mvPath = null;
-        this.mvVideo = null;
-        this.mvReady = false;
-        this.mvSyncInterval = null;
                 });
             });
         });
@@ -1176,6 +1225,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     togglePause() {
+        const now = Date.now();
+        if (this._lastPauseToggle && now - this._lastPauseToggle < 300) return;
+        this._lastPauseToggle = now;
+
         this.isPaused = !this.isPaused;
 
         if (this.isPaused) {
@@ -1185,6 +1238,9 @@ export class GameScene extends Phaser.Scene {
 
             // Pause tweens
             this.tweens.pauseAll();
+
+            // Pause MV
+            if (this.mvVideo) this.mvVideo.pause();
 
             // Show pause overlay
             const W = this.scale.width;
@@ -1214,6 +1270,9 @@ export class GameScene extends Phaser.Scene {
 
             // Resume tweens
             this.tweens.resumeAll();
+
+            // Resume MV
+            if (this.mvVideo) this.mvVideo.play().catch(() => {});
 
             // Remove pause overlay
             this.pauseBg?.destroy();

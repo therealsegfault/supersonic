@@ -29,10 +29,15 @@ export class SongSelectScene extends Phaser.Scene {
             const { loadAllSongs, loadAudio } = await import('./DB.js');
             const imported = await loadAllSongs();
             // Resolve audio blob URLs for imported songs
+            const { loadVideo } = await import('./DB.js');
             for (const song of imported) {
                 if (song.audio && song.audio.startsWith('idb-audio:')) {
                     const audioId = song.audio.slice(10);
                     song.audio = await loadAudio(audioId) || song.audio;
+                }
+                if (song.mv && song.mv.startsWith('idb-video:')) {
+                    const videoId = song.mv.slice(10);
+                    song.mv = await loadVideo(videoId) || song.mv;
                 }
             }
             this.songs = [...this.songs, ...imported];
@@ -41,7 +46,7 @@ export class SongSelectScene extends Phaser.Scene {
         }
 
         // Background
-        this.add.rectangle(this.cx, this.cy, W, H, 0x0a0a0a);
+        this.add.rectangle(this.cx, this.cy, W, H, 0x0a0a0a).setDepth(-100);
 
         // Draw boombox — same as menu but zoomed in on deck
         this.drawBoombox();

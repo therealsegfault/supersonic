@@ -12,6 +12,7 @@
     "vite": "^8.0.9"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^2.1.91",
     "music-metadata-browser": "^2.5.11",
     "phaser": "^4.0.0",
     "tonal": "^6.4.3"

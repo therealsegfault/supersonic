@@ -1,5 +1,35 @@
 import * as Phaser from 'phaser';
 
+// Convert AudioBuffer to WAV Blob for storage
+function audioBufferToWavBlob(audioBuffer) {
+    const numChannels = 1; // mono
+    const sampleRate = audioBuffer.sampleRate;
+    const samples = audioBuffer.getChannelData(0);
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        offset += 2;
+    }
+    return new Blob([buffer], { type: 'audio/wav' });
+}
+
 export class MenuScene extends Phaser.Scene {
     constructor() {
         super('MenuScene');
@@ -14,8 +44,9 @@ export class MenuScene extends Phaser.Scene {
         const cx = W / 2;
         const cy = H / 2;
 
-        // ── Background — dark room ──
-        this.add.rectangle(cx, cy, W, H, 0x0a0a0a);
+        // ── Background
+        this.add.rectangle(this.scale.width/2, this.scale.height/2, this.scale.width, this.scale.height, 0x0a0a0a, 1).setDepth(-100);
+        this.add.rectangle(cx, cy, W, H, 0x0a0a0a).setDepth(-100);
 
         // Subtle noise grain overlay via tiled graphics
         const grain = this.add.graphics();
@@ -360,7 +391,7 @@ export class MenuScene extends Phaser.Scene {
             letterSpacing: 4,
         }).setOrigin(0.5);
 
-        const importBtn = this.add.text(W / 2, H / 2 - 40, '[ IMPORT SONG ]', {
+        const importBtn = this.add.text(W / 2, H / 2 - 50, '[ IMPORT SONG ]', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '18px',
             fontStyle: 'bold',
@@ -371,7 +402,18 @@ export class MenuScene extends Phaser.Scene {
         importBtn.on('pointerout',  () => importBtn.setColor('#00ff88'));
         importBtn.on('pointerdown', () => this.triggerImport());
 
-        const hint = this.add.text(W / 2, H / 2 - 10, 'import an mp3 and autochart it', {
+        const importMVBtn = this.add.text(W / 2, H / 2 - 18, '[ IMPORT MV ]', {
+            fontFamily: 'Fira Sans, sans-serif',
+            fontSize: '18px',
+            fontStyle: 'bold',
+            color: '#ff44aa',
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        importMVBtn.on('pointerover', () => importMVBtn.setColor('#ffffff'));
+        importMVBtn.on('pointerout',  () => importMVBtn.setColor('#ff44aa'));
+        importMVBtn.on('pointerdown', () => this.triggerImportMV());
+
+        const hint = this.add.text(W / 2, H / 2 + 14, 'import an mp3 and autochart it', {
             fontFamily: 'Fira Sans, sans-serif',
             fontSize: '12px',
             fontStyle: 'italic',
@@ -394,7 +436,7 @@ export class MenuScene extends Phaser.Scene {
 
         closeBtn.on('pointerdown', () => this.toggleOptions());
 
-        this.optPanel.add([bg, title, importBtn, hint, this.importStatus, closeBtn]);
+        this.optPanel.add([bg, title, importBtn, importMVBtn, hint, this.importStatus, closeBtn]);
         this.optPanel.setDepth(30);
     }
 
@@ -402,6 +444,104 @@ export class MenuScene extends Phaser.Scene {
         this.optPanel?.destroy();
         this.optPanel = null;
         this.vfdSub.setText('◄ ►  to navigate');
+    }
+
+    async triggerImportMV() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'video/mp4,video/webm,.mp4,.webm';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            this.importStatus.setText('reading video metadata...').setColor('#ffdd00');
+
+            let songTitle = file.name.replace(/\.[^/.]+$/, '');
+            let artist = 'imported';
+            let detectedBpm = null;
+
+            try {
+                const { parseBlob } = await import('music-metadata-browser');
+                const meta = await parseBlob(file);
+                if (meta.common.title) songTitle = meta.common.title;
+                if (meta.common.artist) artist = meta.common.artist;
+                if (meta.common.bpm) detectedBpm = Math.round(meta.common.bpm);
+            } catch (e) {
+                console.warn('No metadata in video:', e);
+            }
+
+            const bpmDefault = detectedBpm || '';
+            const bpmStr = window.prompt(
+                `BPM for "${songTitle}"?${detectedBpm ? ` (detected: ${detectedBpm})` : ' (check tunebat.com)'}`,
+                bpmDefault
+            );
+            const bpmFinal = parseFloat(bpmStr);
+            if (!bpmFinal || isNaN(bpmFinal)) {
+                this.importStatus.setText('cancelled').setColor('#ff3078');
+                document.body.removeChild(input);
+                return;
+            }
+
+            try {
+                const { autochartFromFile } = await import('./Autochart.js');
+                const { saveChart, saveSong, saveAudio, saveVideo } = await import('./DB.js');
+
+                const songName = songTitle.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                const difficulties = ['EZ', 'MEDIUM', 'HARD'];
+                const charts = {};
+
+                this.importStatus.setText('extracting audio...').setColor('#ffdd00');
+                const arrayBuffer = await file.arrayBuffer();
+                const audioCtx = new AudioContext();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+                await audioCtx.close();
+
+                const wavBlob = audioBufferToWavBlob(audioBuffer);
+                const audioFile = new File([wavBlob], `${songName}.wav`, { type: 'audio/wav' });
+
+                for (const diff of difficulties) {
+                    const chart = await autochartFromFile(audioFile, bpmFinal, diff, (p) => {
+                        const pct = typeof p === 'number' ? ` ${Math.round(p * 100)}%` : '';
+                        this.importStatus.setText(`charting ${diff}...${pct}`).setColor('#ffdd00');
+                    });
+                    const chartId = `${songName}_${diff}`;
+                    await saveChart(chartId, chart);
+                    charts[diff] = `idb:${chartId}`;
+                }
+
+                this.importStatus.setText('saving audio...').setColor('#ffdd00');
+                await saveAudio(songName, audioFile);
+
+                this.importStatus.setText('saving video...').setColor('#ffdd00');
+                await saveVideo(songName, file);
+
+                const song = {
+                    id: songName,
+                    title: songTitle,
+                    artist,
+                    audio: `idb-audio:${songName}`,
+                    mv: `idb-video:${songName}`,
+                    charts,
+                    label_color: '#ff44aa',
+                    label_text_color: '#ffffff',
+                    _imported: true,
+                };
+
+                await saveSong(song);
+                this.importStatus.setText('\u2713 MV imported! go to song select').setColor('#00ff88');
+
+            } catch (err) {
+                console.error(err);
+                this.importStatus.setText('something went wrong').setColor('#ff3078');
+            }
+
+            document.body.removeChild(input);
+        };
+
+        input.click();
     }
 
     triggerImport() {

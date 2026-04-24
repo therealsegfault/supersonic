@@ -220,7 +220,7 @@ function buildNotes(sustainedEvents, transientEvents, bpm, difficulty, durationM
 
     for (const ev of filtered) {
         const shape = ev.isHold ? 'cube'
-            : ev.strength > 0.75 ? 'pyramid'
+            : ev.strength > 0.88 ? 'pyramid'
             : 'sphere';
 
         notes.push({

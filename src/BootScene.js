@@ -17,7 +17,7 @@ export class BootScene extends Phaser.Scene {
         const cy = H / 2;
 
         // ── Black background ──
-        this.add.rectangle(cx, cy, W, H, 0x000000);
+        this.add.rectangle(cx, cy, W, H, 0x000000).setDepth(-100);
 
         // ── Boombox body — simplified boot version ──
         const BW = 480;

@@ -1,0 +1,11 @@
+node_modules/
+.git/
+dist/
+build/
+assets/
+images/
+*.png
+*.jpg
+*.mp3
+*.wav
+# Add any other large folders you don't need the AI to read

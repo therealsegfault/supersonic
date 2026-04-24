@@ -5,11 +5,15 @@ import { SongSelectScene } from './SongSelectScene.js';
 import { GameScene } from './GameScene.js';
 import { EndScene } from './EndScene.js';
 
+// Global background color for non-game scenes
+export const BACKGROUND_COLOR = '#0a0a0a';
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: '#000000',
+    backgroundColor: BACKGROUND_COLOR,
+    transparent: true,
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
