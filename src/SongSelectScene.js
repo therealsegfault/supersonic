@@ -19,6 +19,14 @@ export class SongSelectScene extends Phaser.Scene {
         this.cx = W / 2;
         this.cy = H / 2;
 
+        // Reset state (scene instance is reused by Phaser; constructor won't re-run)
+        this.flipped = false;
+        this.animating = false;
+        this.selectedSong = 0;
+        this.diffIndex = 2;
+        this.selectedDiff = 'MEDIUM';
+        this.tapeObjects = [];
+
         // Load manifest
         const res = await fetch('/charts/manifest.json');
         if (!res.ok) throw new Error(`Manifest fetch failed: ${res.status} ${res.url}`);

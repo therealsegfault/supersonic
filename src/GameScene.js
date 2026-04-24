@@ -1322,7 +1322,7 @@ export class GameScene extends Phaser.Scene {
                 fontStyle: 'bold',
                 color: '#ffffff',
             }).setOrigin(0.5).setDepth(26);
-            this.pauseHint = this.add.text(W/2, H/2 + 30, 'ESC resume  ·  SPACE quit to menu', {
+            this.pauseHint = this.add.text(W/2, H/2 + 30, 'ESC resume  ·  SPACE quit to song select', {
                 fontFamily: 'Fira Sans, sans-serif',
                 fontSize: '16px',
                 color: '#666666',
@@ -1366,7 +1366,7 @@ export class GameScene extends Phaser.Scene {
         if (this.mvVideo) this.mvVideo.pause();
         this.cameras.main.fadeOut(400, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start('MenuScene');
+            this.scene.start('SongSelectScene');
         });
     }
 }
