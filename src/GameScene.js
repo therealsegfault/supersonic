@@ -59,6 +59,8 @@ export class GameScene extends Phaser.Scene {
         this.isFailing = false;
         this.failTimer = null;
         this.failWarning = false;
+        this.lastAutoMissMs = -Infinity;
+        this.lastMissMs = -Infinity;
         this.tuningPct = 100;
         this.cinematicActive = false;
         this.isPaused = false;
@@ -96,6 +98,8 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
         this.cx = this.scale.width / 2;
         this.cy = this.scale.height / 2;
+        // Remove any video left over from a previous GameScene run
+        document.querySelectorAll('video').forEach(v => { v.pause(); v.remove(); });
         this.setupBackground();
 
         // ── Top bar ──
@@ -248,17 +252,17 @@ export class GameScene extends Phaser.Scene {
     triggerTapeSlowdown() {
         if (this.isFailing) return;
         this.isFailing = true;
+        if (this.failTimer) { this.failTimer.remove(); this.failTimer = null; }
         this.stopMV();
 
         const source = this.audioSource;
         const ctx = this.audioContext;
-        if (!source) return;
-
-        source.playbackRate.setValueAtTime(1, ctx.currentTime);
-        source.playbackRate.linearRampToValueAtTime(0, ctx.currentTime + 2);
-
-        this.gainNode.gain.setValueAtTime(1, ctx.currentTime);
-        this.gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
+        if (source && ctx) {
+            source.playbackRate.setValueAtTime(1, ctx.currentTime);
+            source.playbackRate.linearRampToValueAtTime(0, ctx.currentTime + 2);
+            this.gainNode.gain.setValueAtTime(1, ctx.currentTime);
+            this.gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
+        }
 
         this.cameras.main.shake(200, 0.01);
         this.time.delayedCall(300, () => this.cameras.main.shake(150, 0.008));
@@ -504,8 +508,12 @@ export class GameScene extends Phaser.Scene {
                 }
             }
 
-            if (!note.frozen && now > APPROACH_TIME_MS && now - note.hitTimeMs > MISS_WINDOW_MS) {
-                this.missNote(note);
+            const missWindow = note.type === NOTE_TYPE.PYRAMID ? MISS_WINDOW_MS * 2 : MISS_WINDOW_MS;
+            if (!note.frozen && now > APPROACH_TIME_MS && now - note.hitTimeMs > missWindow) {
+                if (now - this.lastAutoMissMs >= 100) {
+                    this.lastAutoMissMs = now;
+                    this.missNote(note);
+                }
             }
         });
 
@@ -713,12 +721,14 @@ export class GameScene extends Phaser.Scene {
                 if (note.frozen) return;
                 if (note.type !== type) return;
                 const dist = note.hitTimeMs - now; // positive = future
-                if (dist > 0 && dist <= MISS_WINDOW_MS && dist < earlyDist) {
+                const hitWindow = note.type === NOTE_TYPE.PYRAMID ? MAX_HIT_WINDOW_MS / 0.7 : MAX_HIT_WINDOW_MS;
+                if (dist > 0 && dist <= hitWindow && dist < earlyDist) {
                     earlyNote = note;
                     earlyDist = dist;
                 }
             });
             if (earlyNote) {
+                if (this.getCurrentTimeMs() - this.lastMissMs < 250) return;
                 earlyNote.missed = true;
                 this.fallNote(earlyNote);
                 this.registerMiss();
@@ -864,6 +874,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     registerMiss() {
+        this.lastMissMs = this.getCurrentTimeMs();
         this.combo = 0;
         this.missCount++;
         this.showJudgement('MISS', '#ff3078');
@@ -1015,9 +1026,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     shutdown() {
-        this.stopMV();
         clearInterval(this.mvSyncInterval);
-        // Restore canvas background for menu scenes
+        if (this.mvVideo) {
+            this.mvVideo.pause();
+            this.mvVideo.remove();
+            this.mvVideo = null;
+        }
         this.game.canvas.style.backgroundColor = '#0a0a0a';
     }
 
@@ -1157,50 +1171,39 @@ export class GameScene extends Phaser.Scene {
         if (this.cinematicActive) return;
         this.cinematicActive = true;
 
-        // Snap zoom — taut fabric feel
-        this.cameras.main.zoomTo(1.06, 60, 'Linear', false, (cam, progress) => {
-            if (progress !== 1) return;
-            // Hold briefly then shake
-            this.time.delayedCall(40, () => {
-                this.cameras.main.shake(80, 0.006);
-                // Auto resolve notes in a tight window only
-                this.autoResolveDuring(400);
-                // Zoom back out smoothly
-                this.cameras.main.zoomTo(1.0, 250, 'Sine.easeOut');
-                this.time.delayedCall(300, () => {
-                    this.cinematicActive = false;
-                });
+        this.cameras.main.zoomTo(1.06, 60, 'Linear');
+        this.time.delayedCall(100, () => {
+            this.cameras.main.shake(80, 0.006);
+            const hasFrozen = this.notes.some(n => n.frozen === true);
+            if (!hasFrozen) {
+                const now2 = this.getCurrentTimeMs();
+                const nextNote = this.notes
+                    .filter(n => !n.hit && !n.missed && n.hitTimeMs > now2)
+                    .sort((a, b) => a.hitTimeMs - b.hitTimeMs)[0];
+                const resolveWindow = nextNote
+                    ? Math.min(400, (nextNote.hitTimeMs - now2) * 0.4)
+                    : 400;
+                this.autoResolveDuring(resolveWindow);
+            }
+            this.cameras.main.zoomTo(1.0, 250, 'Sine.easeOut');
+            this.time.delayedCall(300, () => {
+                this.cinematicActive = false;
             });
         });
-
     }
 
     triggerGoodCinematic() {
-        this.cameras.main.zoomTo(1.05, 60, 'Linear', false, (cam, progress) => {
-            if (progress !== 1) return;
+        if (this.cinematicActive) return;
+        this.cinematicActive = true;
+        this.cameras.main.zoomTo(1.05, 60, 'Linear');
+        this.time.delayedCall(60, () => {
             this.cameras.main.shake(60, 0.004);
             this.cameras.main.zoomTo(1.0, 150, 'Sine.easeOut');
+            this.time.delayedCall(150, () => { this.cinematicActive = false; });
         });
     }
 
     triggerWhoopsSwing() {
-        // Camera dips downward
-        const cam = this.cameras.main;
-        const origY = cam.scrollY;
-        this.tweens.add({
-            targets: cam,
-            scrollY: origY + 30,
-            duration: 80,
-            ease: 'Sine.easeOut',
-            onComplete: () => {
-                this.tweens.add({
-                    targets: cam,
-                    scrollY: origY,
-                    duration: 200,
-                    ease: 'Sine.easeOut',
-                });
-            }
-        });
         this.flashVignette();
     }
 
@@ -1209,6 +1212,7 @@ export class GameScene extends Phaser.Scene {
         const windowEnd = now + durationMs;
         this.notes.forEach(note => {
             if (note.hit || note.missed || note.frozen) return;
+            if (note.type === NOTE_TYPE.PYRAMID) return;
             if (note.hitTimeMs >= now && note.hitTimeMs <= windowEnd) {
                 note.hit = true;
                 this.goodCount++;

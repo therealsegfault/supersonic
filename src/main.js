@@ -21,4 +21,5 @@ const config = {
     scene: [BootScene, MenuScene, SongSelectScene, GameScene, EndScene]
 };
 
+await document.fonts.ready;
 new Phaser.Game(config);
