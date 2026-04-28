@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supersonic — Menu Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=VT323&family=Fira+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0806;
+  user-select: none;
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════════ */
+#car-menu {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  animation: menuFadeIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════
+   HEADLINER / CEILING
+═══════════════════════════════════════════════ */
+#headliner {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 68px;
+  z-index: 15;
+  background: linear-gradient(180deg, #090704 0%, #13100c 100%);
+  /* subtle fabric weave */
+  background-image:
+    repeating-linear-gradient( 0deg, transparent 0px, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 4px, rgba(255,255,255,0.008) 4px, rgba(255,255,255,0.008) 5px),
+    linear-gradient(180deg, #090704 0%, #13100c 100%);
+  border-bottom: 1px solid #1e1a14;
+}
+
+/* A-pillar trim accent */
+#headliner::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0d0a07, #2a2218, #2a2218, #0d0a07);
+}
+
+/* ═══════════════════════════════════════════════
+   LEFT PANEL — HEAD UNIT
+═══════════════════════════════════════════════ */
+#head-unit {
+  width: 42%;
+  height: 100%;
+  background: #141416;
+  border-right: 2px solid #0a0a0b;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Dashboard ambience */
+#head-unit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 60%, rgba(255,160,40,0.04) 0%, transparent 70%),
+    repeating-linear-gradient(0deg, transparent 0px, transparent 9px, rgba(255,255,255,0.004) 9px, rgba(255,255,255,0.004) 10px);
+  pointer-events: none;
+}
+
+/* Dashboard surface below the head unit area */
+#head-unit::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 35%;
+  background: linear-gradient(0deg, #0d0d10, #141416);
+  border-top: 1px solid #1e1e22;
+}
+
+.pioneer-faceplate {
+  position: relative;
+  z-index: 2;
+  width: 82%;
+  background: linear-gradient(180deg, #202024, #1a1a1e);
+  border-radius: 10px;
+  padding: 18px 18px 16px;
+  margin-top: 60px; /* pushed down for visor clearance */
+  box-shadow:
+    inset 0 2px 3px rgba(255,255,255,0.06),
+    inset 0 -2px 4px rgba(0,0,0,0.6),
+    0 8px 32px rgba(0,0,0,0.7),
+    0 2px 0 #2e2e34,
+    0 0 0 1px #0a0a0c;
+}
+
+.pioneer-logo {
+  font-family: 'Arial Narrow', 'Arial', sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  color: #666;
+  text-align: right;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── LCD Display ─────────────────────────────── */
+.lcd-bezel {
+  background: #06090a;
+  border-radius: 5px;
+  padding: 12px 14px 10px;
+  margin-bottom: 14px;
+  border: 1px solid #151818;
+  box-shadow:
+    inset 0 3px 8px rgba(0,0,0,0.95),
+    inset 0 0 0 1px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+/* LCD scanlines */
+.lcd-bezel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lcd-option {
+  font-family: 'VT323', monospace;
+  font-size: 38px;
+  line-height: 1;
+  color: #ffaa00;
+  text-shadow: 0 0 8px #ff8800cc, 0 0 22px #ff550066;
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 2;
+  transition: color 0.15s, text-shadow 0.15s;
+}
+
+.lcd-freq {
+  font-family: 'VT323', monospace;
+  font-size: 19px;
+  color: #cc6600;
+  text-shadow: 0 0 6px #ff440044;
+  letter-spacing: 1px;
+  margin-top: 3px;
+  position: relative;
+  z-index: 2;
+}
+
+.lcd-track {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: #885500;
+  letter-spacing: 1px;
+  margin-top: 1px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── EQ bars ─────────────────────────────────── */
+#eq-display {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+  margin-bottom: 12px;
+  padding: 0 2px;
+}
+
+.eq-bar {
+  flex: 1;
+  background: linear-gradient(0deg, #ff6600, #ffaa00 60%, #ffee44);
+  border-radius: 1px 1px 0 0;
+  opacity: 0.75;
+  min-height: 2px;
+  transition: height 0.08s ease;
+}
+
+/* ── Cassette slot ───────────────────────────── */
+.cassette-slot-wrap {
+  margin-bottom: 14px;
+}
+
+.cassette-slot {
+  background: #080808;
+  border-radius: 3px;
+  height: 22px;
+  border: 1px solid #222226;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.9);
+  position: relative;
+  overflow: hidden;
+}
+
+.cassette-slot::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #2a2828 20%, #3a3636 50%, #2a2828 80%, transparent 100%);
+}
+
+.cassette-slot-label {
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  color: #333;
+  text-align: right;
+  letter-spacing: 1px;
+  margin-top: 3px;
+}
+
+/* ── Knobs ───────────────────────────────────── */
+.knobs-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.knob-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.knob {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 32%, #606066 0%, #383840 40%, #1e1e22 100%);
+  border: 2px solid #35353c;
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.8),
+    inset 0 1px 2px rgba(255,255,255,0.08);
+  position: relative;
+}
+
+/* Knob indicator line */
+.knob::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 2px;
+  height: 10px;
+  background: #aaa;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.knob-vol::after  { transform: translateX(-50%) rotate(-40deg); transform-origin: 1px 14px; }
+.knob-bass::after { transform: translateX(-50%) rotate(10deg);  transform-origin: 1px 14px; }
+.knob-treble::after { transform: translateX(-50%) rotate(-15deg); transform-origin: 1px 14px; }
+
+.knob-label {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 9px;
+  color: #3a3a44;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── Bottom model tag ────────────────────────── */
+.unit-model {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 9px;
+  color: #2a2a30;
+  text-align: center;
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════════
+   RIGHT PANEL — PASSENGER WINDOW
+═══════════════════════════════════════════════ */
+#window-panel {
+  flex: 1;
+  height: 100%;
+  background: #0d0b09;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Door panel trim */
+#window-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 28%;
+  background: linear-gradient(0deg, #0a0806, #131109);
+  border-top: 1px solid #1e1c16;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Window frame */
+.window-frame {
+  position: absolute;
+  top: 78px;
+  bottom: 25%;
+  left: 14px;
+  right: 18px;
+  border-radius: 22px 22px 10px 10px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 5px #1c1810,
+    inset 0 0 0 8px #0d0b08,
+    0 6px 30px rgba(0,0,0,0.7);
+}
+
+/* Window rubber gasket */
+.window-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 22px 22px 10px 10px;
+  box-shadow: inset 0 0 0 3px rgba(0,0,0,0.8);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Sky ─────────────────────────────────────── */
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #1a0400 0%,
+    #7a1e00 12%,
+    #c44a00 28%,
+    #e87000 42%,
+    #f59600 55%,
+    #f8b030 65%,
+    #faca58 75%,
+    #fde090 86%,
+    #fff3c0 100%
+  );
+}
+
+/* Sun glow */
+.sun {
+  position: absolute;
+  bottom: 38%;
+  left: 45%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe6 0%, #fff0a0 30%, #ffcc33 65%, #ff9900 100%);
+  box-shadow:
+    0 0 30px 10px rgba(255,200,50,0.5),
+    0 0 70px 20px rgba(255,120,0,0.3),
+    0 0 120px 40px rgba(200,60,0,0.15);
+}
+
+/* Horizon shimmer */
+.horizon-shimmer {
+  position: absolute;
+  bottom: 35%;
+  left: 0; right: 0;
+  height: 8%;
+  background: linear-gradient(180deg, transparent, rgba(255,200,80,0.25), transparent);
+  pointer-events: none;
+}
+
+/* ── City skyline layers ─────────────────────── */
+.buildings-container {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 62%;
+  overflow: hidden;
+}
+
+.building-layer {
+  position: absolute;
+  bottom: 0; left: 0;
+  display: flex;
+  will-change: transform;
+}
+
+.building-layer svg { display: block; flex-shrink: 0; }
+
+.layer-far  { animation: scroll-city 28s linear infinite; }
+.layer-mid  { animation: scroll-city 16s linear infinite; }
+.layer-near { animation: scroll-city  9s linear infinite; }
+
+@keyframes scroll-city {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Window glass effects ────────────────────── */
+.window-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.glass-reflection {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    130deg,
+    rgba(255,255,255,0.1) 0%,
+    rgba(255,255,255,0.04) 20%,
+    transparent 45%
+  );
+}
+
+.glass-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 190, 80, 0.04);
+}
+
+/* Tiny dust motes */
+.glass-dust {
+  position: absolute;
+  width: 2px; height: 2px;
+  border-radius: 50%;
+  background: rgba(255,230,150,0.3);
+}
+
+/* ═══════════════════════════════════════════════
+   VISOR + CASSETTE WALLET
+═══════════════════════════════════════════════ */
+#visor-section {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 460px;
+  z-index: 25;
+}
+
+.visor-attachment {
+  height: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.visor-clip {
+  width: 56px;
+  height: 8px;
+  background: linear-gradient(180deg, #2a2520, #1e1a15);
+  border-radius: 0 0 4px 4px;
+  border-left: 1px solid #3a3328;
+  border-right: 1px solid #3a3328;
+  border-bottom: 1px solid #3a3328;
+}
+
+.visor-body {
+  background: #1e1a15;
+  border-radius: 0 0 12px 12px;
+  padding: 10px 14px 14px;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,0.75),
+    0 2px 6px rgba(0,0,0,0.5),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+  /* fabric texture */
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0px, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 4px),
+    repeating-linear-gradient(-45deg, transparent 0px, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px),
+    linear-gradient(180deg, #1e1a15, #1a1510);
+}
+
+.visor-top-label {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #3a3228;
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ── Cassette wallet pockets ─────────────────── */
+.cassette-wallet {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 6px 4px;
+}
+
+.wallet-pocket {
+  position: relative;
+  width: 78px;
+  height: 58px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Pocket sleeve (the fabric organizer pocket) */
+.pocket-sleeve {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 26px;
+  background: linear-gradient(180deg, #2a2218, #141008);
+  border-radius: 2px 2px 4px 4px;
+  border: 1px solid #3a2e20;
+  border-top: none;
+  z-index: 3;
+}
+
+/* Pocket stitching detail */
+.pocket-sleeve::before {
+  content: '';
+  position: absolute;
+  top: 3px; left: 4px; right: 4px;
+  height: 1px;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+}
+
+/* The cassette tape */
+.cassette {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50px;
+  background: #18140e;
+  border-radius: 4px 4px 2px 2px;
+  border: 1px solid #2e2618;
+  z-index: 2;
+  transform: translateY(12px);
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1),
+    box-shadow 0.3s ease,
+    filter 0.3s ease;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.cassette.selected {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px rgba(255,200,80,0.4),
+    0 8px 24px rgba(255,150,20,0.35),
+    0 3px 10px rgba(0,0,0,0.6);
+  filter: brightness(1.08);
+}
+
+/* Cassette top edge chrome trim */
+.cassette::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 4px; right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  border-radius: 1px;
+}
+
+/* Sticker label area */
+.cassette-sticker {
+  position: absolute;
+  top: 3px; left: 3px; right: 3px;
+  height: 24px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  overflow: hidden;
+  /* slight paper texture */
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+/* Sticker tape edge effect */
+.cassette-sticker::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 50%);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.sticker-doodle {
+  font-size: 10px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.sticker-label {
+  font-family: 'Permanent Marker', cursive;
+  font-size: 7.5px;
+  line-height: 1.1;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* Tape window / reel area */
+.cassette-window {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 14px;
+  border-radius: 7px;
+  background: #0a0806;
+  border: 1px solid #2a2218;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 7px;
+  overflow: hidden;
+}
+
+.tape-reel {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #3a3028;
+  background: #111;
+  position: relative;
+}
+
+.tape-reel::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 2px; height: 2px;
+  border-radius: 50%;
+  background: #555;
+  transform: translate(-50%, -50%);
+}
+
+.tape-bridge {
+  width: 12px;
+  height: 3px;
+  background: #2a2218;
+  border-radius: 1px;
+}
+
+/* ── Nav chevrons ────────────────────────────── */
+.nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.chevron-btn {
+  background: none;
+  border: none;
+  color: #4a3e2e;
+  font-size: 20px;
+  cursor: pointer;
+  width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.chevron-btn:hover {
+  color: #c89040;
+  background: rgba(255,180,50,0.1);
+}
+
+.nav-hint-text {
+  font-family: 'VT323', monospace;
+  font-size: 15px;
+  color: #3a3228;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════
+   BOTTOM PRESS HINT
+═══════════════════════════════════════════════ */
+#press-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  color: #4a3e2e;
+  letter-spacing: 3px;
+  z-index: 30;
+  white-space: nowrap;
+  animation: hintBlink 2.4s ease-in-out infinite;
+}
+
+@keyframes hintBlink {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 0.2; }
+}
+
+/* ── LCD flash animation ─────────────────────── */
+@keyframes lcdFlash {
+  0%   { color: #ffffff; text-shadow: 0 0 24px #ffffff, 0 0 40px #ffaa00; }
+  100% { color: #ffaa00; text-shadow: 0 0 8px #ff8800cc, 0 0 22px #ff550066; }
+}
+
+.lcd-flash {
+  animation: lcdFlash 0.25s ease-out forwards;
+}
+</style>
+</head>
+<body>
+
+<div id="car-menu">
+
+  <!-- ── Headliner ── -->
+  <div id="headliner"></div>
+
+  <!-- ── Left: Pioneer Head Unit ── -->
+  <div id="head-unit">
+    <div class="pioneer-faceplate">
+      <div class="pioneer-logo">Pioneer  DEH-P6000</div>
+
+      <!-- LCD display -->
+      <div class="lcd-bezel">
+        <div class="lcd-option" id="lcd-option">NEW GAME</div>
+        <div class="lcd-freq"   id="lcd-freq">FM  88.5 MHz  ◄◄  ▶</div>
+        <div class="lcd-track"  id="lcd-track">TRACK 01 / 04</div>
+      </div>
+
+      <!-- EQ bars -->
+      <div id="eq-display"></div>
+
+      <!-- Cassette slot (decorative) -->
+      <div class="cassette-slot-wrap">
+        <div class="cassette-slot"></div>
+        <div class="cassette-slot-label">TAPE A</div>
+      </div>
+
+      <!-- Knobs -->
+      <div class="knobs-row">
+        <div class="knob-group">
+          <div class="knob knob-vol"></div>
+          <div class="knob-label">VOL</div>
+        </div>
+        <div class="knob-group">
+          <div class="knob knob-bass"></div>
+          <div class="knob-label">BASS</div>
+        </div>
+        <div class="knob-group">
+          <div class="knob knob-treble"></div>
+          <div class="knob-label">TREBLE</div>
+        </div>
+      </div>
+
+      <div class="unit-model">SUPERSONIC AUDIO · PROTO v0.0.1</div>
+    </div>
+  </div>
+
+  <!-- ── Right: Passenger Window ── -->
+  <div id="window-panel">
+    <div class="window-frame">
+
+      <!-- Sky + sun -->
+      <div class="sky">
+        <div class="sun"></div>
+        <div class="horizon-shimmer"></div>
+      </div>
+
+      <!-- Scrolling city layers (built by JS) -->
+      <div class="buildings-container">
+        <div class="building-layer layer-far"  id="layer-far"></div>
+        <div class="building-layer layer-mid"  id="layer-mid"></div>
+        <div class="building-layer layer-near" id="layer-near"></div>
+      </div>
+
+      <!-- Glass overlay -->
+      <div class="window-glass">
+        <div class="glass-reflection"></div>
+        <div class="glass-tint"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Sun Visor + Cassette Wallet ── -->
+  <div id="visor-section">
+    <div class="visor-attachment">
+      <div class="visor-clip"></div>
+    </div>
+    <div class="visor-body">
+      <div class="visor-top-label">Cassette Organizer</div>
+      <div class="cassette-wallet" id="cassette-wallet">
+        <!-- Populated by JS -->
+      </div>
+      <div class="nav-row">
+        <button class="chevron-btn" id="chevron-left"  aria-label="Previous">❮</button>
+        <div class="nav-hint-text">← → NAVIGATE  ·  ENTER CONFIRM</div>
+        <button class="chevron-btn" id="chevron-right" aria-label="Next">❯</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Press hint -->
+  <div id="press-hint">PRESS ENTER</div>
+
+</div><!-- #car-menu -->
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════
+//  MENU OPTIONS
+// ══════════════════════════════════════════════════
+const MENU_OPTIONS = [
+  {
+    label:       'NEW GAME',
+    doodle:      '🌅',
+    stickerBg:   '#e8c97a',
+    stickerText: '#2d1a00',
+    action() { console.log('[Supersonic] NEW GAME selected'); }
+  },
+  {
+    label:       'LOAD GAME',
+    doodle:      '〜',
+    stickerBg:   '#7abde8',
+    stickerText: '#001e33',
+    action() { console.log('[Supersonic] LOAD GAME selected'); }
+  },
+  {
+    label:       'CONFIG',
+    doodle:      '⚙',
+    stickerBg:   '#c4c4c4',
+    stickerText: '#181818',
+    action() { console.log('[Supersonic] CONFIG selected'); }
+  },
+  {
+    label:       'EXIT',
+    doodle:      '⏏',
+    stickerBg:   '#e87a7a',
+    stickerText: '#2d0000',
+    action() { console.log('[Supersonic] EXIT selected'); }
+  },
+];
+
+let selectedIndex = 0;
+
+// ══════════════════════════════════════════════════
+//  BUILD CASSETTE WALLET
+// ══════════════════════════════════════════════════
+const walletEl = document.getElementById('cassette-wallet');
+
+MENU_OPTIONS.forEach((opt, i) => {
+  const pocket = document.createElement('div');
+  pocket.className = 'wallet-pocket';
+
+  const cassette = document.createElement('div');
+  cassette.className = 'cassette' + (i === 0 ? ' selected' : '');
+  cassette.id = `cassette-${i}`;
+  cassette.innerHTML = `
+    <div class="cassette-sticker" style="background:${opt.stickerBg}">
+      <span class="sticker-doodle">${opt.doodle}</span>
+      <span class="sticker-label" style="color:${opt.stickerText}">${opt.label}</span>
+    </div>
+    <div class="cassette-window">
+      <div class="tape-reel"></div>
+      <div class="tape-bridge"></div>
+      <div class="tape-reel"></div>
+    </div>
+  `;
+
+  const sleeve = document.createElement('div');
+  sleeve.className = 'pocket-sleeve';
+
+  pocket.appendChild(cassette);
+  pocket.appendChild(sleeve);
+  walletEl.appendChild(pocket);
+
+  // Click: single click selects, second click (already selected) confirms
+  pocket.addEventListener('click', () => {
+    if (i === selectedIndex) {
+      fireOption();
+    } else {
+      selectIndex(i);
+    }
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════
+function selectIndex(idx) {
+  // Deselect old
+  document.getElementById(`cassette-${selectedIndex}`)?.classList.remove('selected');
+
+  selectedIndex = ((idx % MENU_OPTIONS.length) + MENU_OPTIONS.length) % MENU_OPTIONS.length;
+
+  // Select new
+  document.getElementById(`cassette-${selectedIndex}`)?.classList.add('selected');
+
+  // Update LCD
+  const opt = MENU_OPTIONS[selectedIndex];
+  const lcdEl = document.getElementById('lcd-option');
+  lcdEl.textContent = opt.label;
+  lcdEl.style.animation = 'none';
+  // Force reflow then re-apply flicker
+  void lcdEl.offsetWidth;
+  lcdEl.style.animation = '';
+
+  document.getElementById('lcd-track').textContent =
+    `TRACK 0${selectedIndex + 1} / 0${MENU_OPTIONS.length}`;
+}
+
+function navigate(dir) {
+  selectIndex(selectedIndex + dir);
+}
+
+function fireOption() {
+  const opt = MENU_OPTIONS[selectedIndex];
+  opt.action();
+
+  // LCD flash feedback
+  const lcdEl = document.getElementById('lcd-option');
+  lcdEl.classList.remove('lcd-flash');
+  void lcdEl.offsetWidth;
+  lcdEl.classList.add('lcd-flash');
+}
+
+// Chevrons
+document.getElementById('chevron-left') .addEventListener('click', () => navigate(-1));
+document.getElementById('chevron-right').addEventListener('click', () => navigate( 1));
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')               { e.preventDefault(); navigate(-1); }
+  else if (e.key === 'ArrowRight')         { e.preventDefault(); navigate( 1); }
+  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fireOption(); }
+});
+
+// ══════════════════════════════════════════════════
+//  BUILDING SILHOUETTE GENERATION
+// ══════════════════════════════════════════════════
+
+/** Seeded LCG random */
+function makeSeed(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = Math.imul(s, 1664525) + 1013904223 >>> 0;
+    return s / 4294967296;
+  };
+}
+
+/**
+ * Generate an SVG building-skyline strip.
+ * @param {number} svgW - pixel width of the SVG
+ * @param {number} svgH - pixel height of the SVG
+ * @param {object} opts
+ */
+function buildSkylineSVG(svgW, svgH, {
+  minBW, maxBW, minBH, maxBH, gapMin, gapMax,
+  fillColor, windowColor, antennaChance,
+  windowChance, seed
+}) {
+  const rand = makeSeed(seed);
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width',   svgW);
+  svg.setAttribute('height',  svgH);
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  svg.style.cssText = 'display:block;flex-shrink:0';
+
+  const g = document.createElementNS(NS, 'g');
+
+  let x = 0;
+  while (x < svgW + maxBW) {
+    const bw = Math.floor(rand() * (maxBW - minBW) + minBW);
+    const bh = Math.floor(rand() * (maxBH - minBH) + minBH);
+    const by = svgH - bh;
+
+    // Building body
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', by);
+    rect.setAttribute('width', bw);
+    rect.setAttribute('height', bh + 2); // +2 to seal bottom
+    rect.setAttribute('fill', fillColor);
+    g.appendChild(rect);
+
+    // Antenna
+    if (rand() < antennaChance) {
+      const aLen = Math.floor(rand() * 16 + 6);
+      const ax   = x + Math.floor(bw * (0.3 + rand() * 0.4));
+      const ant  = document.createElementNS(NS, 'rect');
+      ant.setAttribute('x',      ax);
+      ant.setAttribute('y',      by - aLen);
+      ant.setAttribute('width',  2);
+      ant.setAttribute('height', aLen);
+      ant.setAttribute('fill',   fillColor);
+      g.appendChild(ant);
+
+      // Antenna blinking light (tiny square top)
+      const dot = document.createElementNS(NS, 'rect');
+      dot.setAttribute('x',      ax);
+      dot.setAttribute('y',      by - aLen - 2);
+      dot.setAttribute('width',  2);
+      dot.setAttribute('height', 2);
+      dot.setAttribute('fill',   '#ff4400');
+      dot.setAttribute('opacity', '0.5');
+      g.appendChild(dot);
+    }
+
+    // Windows
+    if (windowColor && rand() < 0.7) {
+      for (let wy = by + 5; wy < svgH - 5; wy += 9) {
+        for (let wx = x + 4; wx < x + bw - 6; wx += 8) {
+          if (rand() < windowChance) {
+            const win = document.createElementNS(NS, 'rect');
+            win.setAttribute('x',       wx);
+            win.setAttribute('y',       wy);
+            win.setAttribute('width',   4);
+            win.setAttribute('height',  4);
+            win.setAttribute('fill',    windowColor);
+            win.setAttribute('opacity', (0.2 + rand() * 0.5).toFixed(2));
+            g.appendChild(win);
+          }
+        }
+      }
+    }
+
+    x += bw + Math.floor(rand() * (gapMax - gapMin) + gapMin);
+  }
+
+  svg.appendChild(g);
+  return svg;
+}
+
+function populateLayer(id, svgH, opts) {
+  const container = document.getElementById(id);
+  // We render 2 copies for seamless looping; each copy is svgW wide.
+  const svgW = 900;
+  for (let i = 0; i < 2; i++) {
+    container.appendChild(buildSkylineSVG(svgW, svgH, { ...opts, seed: opts.seed + i * 31337 }));
+  }
+  container.style.height = svgH + 'px';
+}
+
+// Far layer — small buildings, lighter, lit windows
+populateLayer('layer-far', 100, {
+  minBW: 14, maxBW: 32, minBH: 22, maxBH: 56,
+  gapMin: 2, gapMax: 6,
+  fillColor:    '#2c1400',
+  windowColor:  '#ff9933',
+  windowChance: 0.45,
+  antennaChance: 0.15,
+  seed: 0xABCDE,
+});
+
+// Mid layer — medium buildings
+populateLayer('layer-mid', 160, {
+  minBW: 24, maxBW: 65, minBH: 55, maxBH: 115,
+  gapMin: 3, gapMax: 10,
+  fillColor:    '#190a00',
+  windowColor:  '#ff8822',
+  windowChance: 0.35,
+  antennaChance: 0.30,
+  seed: 0x12345,
+});
+
+// Near layer — large foreground buildings, no windows
+populateLayer('layer-near', 220, {
+  minBW: 38, maxBW: 95, minBH: 95, maxBH: 185,
+  gapMin: 4, gapMax: 14,
+  fillColor:    '#0d0500',
+  windowColor:  null,
+  windowChance: 0,
+  antennaChance: 0.22,
+  seed: 0xF00BAR | 0,
+});
+
+// ══════════════════════════════════════════════════
+//  EQ BAR ANIMATION
+// ══════════════════════════════════════════════════
+const eqContainer = document.getElementById('eq-display');
+const BAR_COUNT = 13;
+const eqBars = [];
+
+for (let i = 0; i < BAR_COUNT; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'eq-bar';
+  bar.style.cssText = 'flex:1;height:30%';
+  eqContainer.appendChild(bar);
+  eqBars.push(bar);
+}
+
+let eqT = 0;
+(function animateEQ() {
+  eqT += 0.07;
+  eqBars.forEach((bar, i) => {
+    const h = 15 + 68 * (
+      0.5
+      + 0.35 * Math.sin(eqT * 1.4  + i * 0.65)
+      + 0.15 * Math.sin(eqT * 2.3  + i * 1.1 )
+      + 0.10 * Math.sin(eqT * 0.45 + i * 0.3 )
+    );
+    bar.style.height = h + '%';
+  });
+  requestAnimationFrame(animateEQ);
+})();
+
+// ══════════════════════════════════════════════════
+//  DUST MOTES (static glass dust)
+// ══════════════════════════════════════════════════
+const glassEl = document.querySelector('.window-glass');
+for (let d = 0; d < 12; d++) {
+  const dust = document.createElement('div');
+  dust.className = 'glass-dust';
+  dust.style.cssText = `
+    left:${10 + Math.random()*80}%;
+    top:${5  + Math.random()*80}%;
+    opacity:${0.1 + Math.random()*0.3};
+    width:${1 + Math.random()*2}px;
+    height:${1 + Math.random()*2}px;
+  `;
+  glassEl.appendChild(dust);
+}
+</script>
+</body>
+</html>
